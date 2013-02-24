@@ -1,0 +1,74 @@
+{
+    'conditions': [
+        ['OS=="win"', {
+            'variables': {
+                'THIRD_PATH%': 'E:/node-images/third',
+                'with_png%': 'true',
+                'with_jpeg%': 'true',
+                'with_gif%': 'true',
+                'with_bmp%': 'false',
+                'with_raw%': 'true'
+            }
+        }, {
+            'variables': {
+				'with_png%': '<!(./util/has_lib.sh png)',
+                'with_jpeg%': '<!(./util/has_lib.sh jpeg)',
+                'with_gif%': '<!(./util/has_lib.sh gif)',
+                'with_bmp%': 'false',
+                'with_raw%': 'true',
+            }
+        }]
+    ],
+    'targets': [{
+        'target_name': 'images',
+        'sources': ['src/Image.cc'],
+        'conditions': [
+            ['OS=="win"', {
+                'include_dirs': ['<(THIRD_PATH)/include']
+            }, {}],
+            ['with_png=="true"', {
+                'defines': ['HAVE_PNG'],
+                'sources': ['src/Png.cc'],
+                'conditions': [
+                    ['OS=="win"', {
+                        'libraries': [
+                            '-l<(THIRD_PATH)/lib/libpng.lib',
+                            '-l<(THIRD_PATH)/lib/zlib.lib']
+                    }, {
+                        'libraries': ['-lpng']
+                    }]
+                ]
+            }],
+            ['with_jpeg=="true"', {
+                'defines': ['HAVE_JPEG'],
+                'sources': ['src/Jpeg.cc'],
+                'conditions': [
+                    ['OS=="win"', {
+                        'libraries': ['-l<(THIRD_PATH)/lib/jpeg-static.lib']
+                    }, {
+                        'libraries': ['-ljpeg']
+                    }]
+                ]
+            }],
+            ['with_gif=="true"', {
+                'defines': ['HAVE_GIF'],
+                'sources': ['src/Gif.cc'],
+                'conditions': [
+                    ['OS=="win"', {
+                        'libraries': ['-l<(THIRD_PATH)/lib/giflib.lib']
+                    }, {
+                        'libraries': ['-lgif']
+                    }]
+                ]
+            }],
+            ['with_bmp=="true"', {
+                'defines': ['HAVE_BMP'],
+                'sources': ['src/Bmp.cc']
+            }],
+            ['with_raw=="true"', {
+                'defines': ['HAVE_RAW'],
+                'sources': ['src/Raw.cc']
+            }]
+        ]
+    }]
+}
