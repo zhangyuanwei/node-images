@@ -1,9 +1,8 @@
-
 //
 // Image.cc
 //
-// Copyright (c) 2010 LearnBoost <tj@learnboost.com>
-//
+// Copyright (c) 2013 ZhangYuanwei <zhangyuanwei1988@gmail.com>
+
 #include "Image.h"
 
 #include <stdlib.h>

@@ -1,3 +1,8 @@
+//
+// Gif.cc
+//
+// Copyright (c) 2013 ZhangYuanwei <zhangyuanwei1988@gmail.com>
+
 #include "Image.h"
 
 #ifdef HAVE_GIF

@@ -6,6 +6,11 @@ lib-cov
 *.out
 *.pid
 *.gz
+*.cmd
+
+Makefile
+build
+third/src
 
 pids
 logs
