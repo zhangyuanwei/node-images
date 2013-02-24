@@ -14,4 +14,4 @@ background.fillColor(0xff, 0x00, 0x00, 0.5);
 
 background.drawImage(picture, 0, 0);
 
-fs.writeFileSync("output/fillColor.output.png", background.toBuffer(images.TYPE_PNG));
+fs.writeFileSync("output/fillColor.png", background.toBuffer(images.TYPE_PNG));

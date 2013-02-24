@@ -5,4 +5,4 @@ var img;
 
 img = new images.Image();
 img.loadFromBuffer(fs.readFileSync("img/rotating_earth.gif"));
-fs.writeFileSync("output/toBuffer.output.png", img.toBuffer(images.TYPE_PNG));
+fs.writeFileSync("output/toBuffer.png", img.toBuffer(images.TYPE_PNG));

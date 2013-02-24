@@ -30,4 +30,4 @@ dstImg.drawImage(img3, x, y);
 
 dstImg.drawImage(img4, 0, 0);
 
-fs.writeFileSync("output/drawImage.output.png", dstImg.toBuffer(images.TYPE_PNG));
+fs.writeFileSync("output/drawImage.png", dstImg.toBuffer(images.TYPE_PNG));

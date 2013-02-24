@@ -18,4 +18,4 @@ dstImg.copyFromImage(srcImg, x, y, width, height);
 
 dstData = dstImg.toBuffer(images.TYPE_PNG);
 
-fs.writeFileSync("output/copyFromImage.output.png", dstData);
+fs.writeFileSync("output/copyFromImage.png", dstData);
