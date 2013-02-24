@@ -11,6 +11,7 @@ lib-cov
 Makefile
 build
 third/src
+test/output
 
 pids
 logs
