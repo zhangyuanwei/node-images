@@ -1,0 +1,32 @@
+{
+  "name": "node-images",
+  "version": "0.0.1",
+  "description": "Cross-platform image decoder(png/jpeg/gif) and encoder(png) for Nodejs",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node test/drawImage.js",
+    "install": "node-gyp rebuild"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zhangyuanwei/node-images.git"
+  },
+  "keywords": [
+    "image",
+    "decoder",
+    "encoder",
+    "png",
+    "jpeg",
+    "gif",
+    "cross-platform",
+    "images"
+  ],
+  "author": "ZhangYuanwei <zhangyuanwei1988@gmail.com>",
+  "license": "BSD",
+  "gypfile": true,
+  "readmeFilename": "README.md",
+  "gitHead": "9921ad4313ba247e60d3dc9f57f80cc40b629f9a"
+}
