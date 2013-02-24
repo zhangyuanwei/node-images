@@ -8,9 +8,10 @@ lib-cov
 *.gz
 *.cmd
 
+dev
 Makefile
 build
-third/src
+third
 
 pids
 logs

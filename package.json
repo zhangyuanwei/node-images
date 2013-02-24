@@ -1,6 +1,6 @@
 {
-  "name": "node-images",
-  "version": "0.0.2",
+  "name": "images",
+  "version": "1.0.0",
   "description": "Cross-platform image decoder(png/jpeg/gif) and encoder(png) for Nodejs",
   "main": "index.js",
   "directories": {
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "node test/drawImage.js",
-    "install": "node-gyp rebuild"
+    "install": "node install.js"
   },
   "repository": {
     "type": "git",
