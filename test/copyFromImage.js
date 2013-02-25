@@ -1,5 +1,5 @@
 var fs = require("fs"),
-    images = require("../index");
+    images = require(__dirname + "/../index");
 
 var srcImg = new images.Image(),
     dstImg = new images.Image(),
@@ -10,7 +10,7 @@ var srcImg = new images.Image(),
     srcData, dstData;
 
 
-srcData = fs.readFileSync("img/PNG_transparency_demonstration.png");
+srcData = fs.readFileSync(__dirname + "/img/PNG_transparency_demonstration.png");
 
 srcImg.loadFromBuffer(srcData);
 
@@ -18,4 +18,4 @@ dstImg.copyFromImage(srcImg, x, y, width, height);
 
 dstData = dstImg.toBuffer(images.TYPE_PNG);
 
-fs.writeFileSync("output/copyFromImage.png", dstData);
+fs.writeFileSync(__dirname + "/output/copyFromImage.png", dstData);
