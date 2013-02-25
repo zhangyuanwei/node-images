@@ -22,16 +22,23 @@ fs.writeFileSync("test/output/gif2png.png", img.toBuffer(images.TYPE_PNG));
 ### images.Image([width, heigth])
 
 ### loadFromBuffer(buffer[, start, [end]]);
+See `test/loadFromBuffer.js`
 
 ### copyFromImage(x, y, width, height);
+See `test/copyFromImage.js`
 
 ### fillColor(red, green, blue[, alpha]);
+See `test/fillColor.js`
 
 ### drawImage(img, x, y);
+See `test/drawImage.js`
 
 ### toBuffer(type);
+See `test/toBuffer.js`
 
 ### width
+*readonly*
 
 ### height
+*readonly*
 
