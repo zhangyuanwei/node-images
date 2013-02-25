@@ -16,7 +16,7 @@
 int ReadFromMemory (GifFileType *gif, GifByteType *dst, int size){
 
 	ImageData *data;
-	int len; 
+	int len;
 
 	if(!gif->UserData) return -1;
 
@@ -182,7 +182,6 @@ DECODER_FN(Gif){
 	}while(type != TERMINATE_RECORD_TYPE);
 
 	//printf("Record End!\n");
-
 
 	ret = SUCCESS;
 	goto FREE_ROWS;
