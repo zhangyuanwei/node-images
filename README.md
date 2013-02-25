@@ -17,7 +17,7 @@ img.loadFromBuffer(fs.readFileSync("test/img/rotating_earth.gif"));
 fs.writeFileSync("test/output/gif2png.png", img.toBuffer(images.TYPE_PNG));
 ```
 
-## Api
+## API
 
 ### images.Image([width, heigth])
 
