@@ -45,6 +45,11 @@ See `demo/fillColor.js`
 ### .drawImage(image, x, y)
 See `demo/drawImage.js`
 
+### .toBuffer(type)
+Encode image to buffer.
+Return buffer
+See `demo/toBuffer.js`
+
 ### .size([width, height])
 Return image size or **TODO:set image size**
 ```javascript
