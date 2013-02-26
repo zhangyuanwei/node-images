@@ -11,7 +11,8 @@ lib-cov
 dev
 Makefile
 build
-third
+third/*.bz2
+third/*.gz
 
 pids
 logs

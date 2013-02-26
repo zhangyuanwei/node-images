@@ -1,0 +1,9 @@
+ - use newest libgif source, wich is API and ABI compatible to libungif
+ - add VC90 project files from leptonia project.
+ - http://leptonica.org/vs2008doc/building-giflib.html#build-giflib
+ - giflib4.1.6.zip fpr the solution files is available.
+ - add missing stdlib.h as described in: http://stephendoyle.blogspot.com/2008/03/c-tr1-stdinth-still-missing-from-visual.html
+ - compile in win32
+ - add destinationarchitecture x64
+ - compile in x64
+ - copy header files and *.lib to the desired binary folders
