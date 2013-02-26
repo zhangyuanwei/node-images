@@ -17,9 +17,9 @@ fs.readdir(DIR, function(err, items) {
                 return;
             }
 
-            var img = new images.Image();
-            img.loadFromBuffer(data);
-            console.log(entry + "\nwidth:" + img.width + " height:" + img.height + "\n");
+            console.log(entry + ":");
+            console.log(images.loadFromBuffer(data).size());
+            console.log();
         });
     });
 });
