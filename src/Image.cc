@@ -172,25 +172,33 @@ Handle<Value> Image::LoadFromBuffer(const Arguments &args){ // {{{
 Handle<Value> Image::CopyFromImage(const Arguments &args){ // {{{
 	HandleScope scope;
 	Image *src, *dst;
+	uint32_t x, y, w, h;
 
 	Local<Object> obj = args[0]->ToObject();
 
-	if(!Image::constructor->HasInstance(obj)
-			|| !args[1]->IsNumber() // x
-			|| !args[2]->IsNumber() // y
-			|| !args[3]->IsNumber() // w
-			|| !args[4]->IsNumber()) // h
+	if(!Image::constructor->HasInstance(obj))
 		return THROW_INVALID_ARGUMENTS_ERROR();
 
 	src = ObjectWrap::Unwrap<Image>(obj);
 	dst = ObjectWrap::Unwrap<Image>(args.This());
 
-	if(dst->pixels->CopyFrom(src->pixels, 
-				args[1]->Uint32Value(), // x
-				args[2]->Uint32Value(), // y
-				args[3]->Uint32Value(), // w
-				args[4]->Uint32Value() // h
-				) != SUCCESS){
+	x = y = 0;
+	w = src->pixels->width;
+	h = src->pixels->height;
+
+	if(args[1]->IsNumber()   // x
+	&& args[2]->IsNumber()){ // y
+		x = args[1]->Uint32Value();
+		y = args[2]->Uint32Value();
+	}
+
+	if(args[3]->IsNumber()   // w
+	&& args[4]->IsNumber()){ // h
+		w = args[3]->Uint32Value();
+		h = args[4]->Uint32Value();
+	}
+
+	if(dst->pixels->CopyFrom(src->pixels, x, y, w, h) != SUCCESS){
 		return THROW_ERROR("Out of memory.");
 	}
 
