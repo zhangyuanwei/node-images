@@ -4,7 +4,7 @@
     "description": "Cross-platform image decoder(png/jpeg/gif) and encoder(png) for Nodejs",
     "main": "index.js",
     "scripts": {
-        "test": "node test/runAllTest.js",
+        "test": "node demo/runAllDemo.js",
         "install": "node install.js"
     },
     "repository": {
