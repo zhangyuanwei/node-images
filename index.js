@@ -1,6 +1,7 @@
 var USE_OLD_API = false,
     _images = require("./binding.js"),
     _Image = _images.Image,
+    slice = Array.prototype.slice,
     prototype;
 
 function WrappedImage(width, height) {
@@ -48,9 +49,8 @@ prototype = {
     }
 };
 
-function bind(target, obj) {
-    var item,
-    slice = Array.prototype.slice;
+function bind(target, obj, aliases) {
+    var item;
     for (item in obj) {
         if (obj.hasOwnProperty(item)) {
             target[item] = (function(fn) {
@@ -59,30 +59,57 @@ function bind(target, obj) {
                     return ret === undefined ? this : ret;
                 };
             })(obj[item]);
+            if (aliases.hasOwnProperty(item)) {
+                aliases[item].forEach(function(alias) {
+                    target[alias] = target[item];
+                });
+            }
         }
     }
 }
 
-bind(WrappedImage.prototype, prototype);
+bind(WrappedImage.prototype, prototype, {
+    "fillColor": ["fill"],
+    "toBuffer": ["encode"],
+    "drawImage": ["draw"]
+});
 
-module.exports = USE_OLD_API ? _images : {
-    TYPE_PNG: _images.TYPE_PNG,
-    TYPE_JPEG: _images.TYPE_JPEG,
-    TYPE_GIF: _images.TYPE_GIF,
-    TYPE_BMP: _images.TYPE_BMP,
-    TYPE_RAW: _images.TYPE_RAW,
-
-    Image: WrappedImage,
-
-    createImage: function(width, height) {
-        return WrappedImage(width, height);
-    },
-
-    loadFromBuffer: function(buffer, start, end) {
-        return WrappedImage().loadFromBuffer(buffer, start, end);
-    },
-
-    copyFromImage: function(src, x, y, width, height) {
-        return WrappedImage().copyFromImage(src, x, y, width, height);
+function images(obj) {
+    var constructor;
+    if (obj instanceof Buffer) {
+        constructor = images.loadFromBuffer;
+    } else if (obj instanceof WrappedImage) {
+        constructor = images.copyFromImage;
+    } else {
+        constructor = images.createImage;
     }
+    return constructor.apply(images, slice.call(arguments, 0));
+}
+
+images.TYPE_PNG = _images.TYPE_PNG;
+//images.TYPE_JPEG = _images.TYPE_JPEG;
+//images.TYPE_GIF = _images.TYPE_GIF;
+//images.TYPE_BMP = _images.TYPE_BMP;
+//images.TYPE_RAW = _images.TYPE_RAW;
+
+images.Image = WrappedImage;
+
+images.createImage = function(width, height) {
+    return WrappedImage(width, height);
 };
+
+images.loadFromBuffer = function(buffer, start, end) {
+    return WrappedImage().loadFromBuffer(buffer, start, end);
+};
+
+images.copyFromImage = function(src, x, y, width, height) {
+    return WrappedImage().copyFromImage(src, x, y, width, height);
+};
+
+images.setLimit = function(maxWidth, maxHeight) {
+    _images.maxHeight = maxHeight;
+    _images.maxWidth = maxWidth;
+    return images;
+};
+
+module.exports = USE_OLD_API ? _images : images;

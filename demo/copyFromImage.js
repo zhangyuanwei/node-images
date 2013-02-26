@@ -10,9 +10,9 @@ x = 100,
 
 
 srcData = fs.readFileSync(__dirname + "/img/PNG_transparency_demonstration.png");
-srcImg = images.loadFromBuffer(srcData);
+srcImg = images(srcData);
 
-dstImg = images.copyFromImage(srcImg, x, y, width, height);
-dstData = dstImg.toBuffer(images.TYPE_PNG);
+dstImg = images(srcImg, x, y, width, height);
+dstData = dstImg.encode(images.TYPE_PNG);
 
 fs.writeFileSync(__dirname + "/output/copyFromImage.png", dstData);

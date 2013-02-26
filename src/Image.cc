@@ -11,13 +11,34 @@
 
 #include <node_buffer.h>
 
-#define THROW_TYPE_ERROR(msg) ThrowException(Exception::TypeError(String::New(msg)))
-#define THROW_ERROR(msg) ThrowException(Exception::Error(String::New(msg)))
-#define THROW_INVALID_ARGUMENTS_ERROR(msg) THROW_TYPE_ERROR("Invalid arguments" # msg)
+
+//#define SET_ERROR_FILE_LINE(file, line, msg) Image::SetError( file #line msg)
+//#define SET_ERROR(msg) SET_ERROR_FILE_LINE(__FILE__, __LINE__, meg)
+
+#define STRINGFY(n) #n
+#define MERGE_FILE_LINE(file, line, msg) ( file ":" STRINGFY(line) " " msg)
+#define FILE_LINE(msg) MERGE_FILE_LINE(__FILE__, __LINE__, msg)
+#define ERROR(type, msg) Exception::type##Error(String::New(msg))
+#define THROW(err) ThrowException(err)
+
+#define SET_ERROR(msg) (Image::SetError(FILE_LINE(msg)))
+#define GET_ERROR() (Image::GetError())
+#define THROW_ERROR(msg) THROW(ERROR(,FILE_LINE(msg)))
+#define THROW_GET_ERROR() THROW(GET_ERROR())
+
+#define THROW_TYPE_ERROR(msg) THROW(ERROR(Type, msg))
+#define THROW_INVALID_ARGUMENTS_ERROR(msg) THROW_TYPE_ERROR("Invalid arguments" msg)
+
+#define DEFAULT_WIDTH_LIMIT  10240 // default limit 10000x10000
+#define DEFAULT_HEIGHT_LIMIT 10240 // default limit 10000x10000
 
 Persistent<FunctionTemplate> Image::constructor;
 //size_t Image::survival;
 ImageCodec *Image::codecs;
+
+size_t Image::maxWidth = DEFAULT_WIDTH_LIMIT;
+size_t Image::maxHeight = DEFAULT_HEIGHT_LIMIT;
+const char *Image::error = NULL;
 
 void Image::Initialize(Handle<Object> target){ // {{{
 	HandleScope scope;
@@ -39,18 +60,56 @@ void Image::Initialize(Handle<Object> target){ // {{{
 	NODE_SET_PROTOTYPE_METHOD(constructor, "drawImage", DrawImage);
 	NODE_SET_PROTOTYPE_METHOD(constructor, "toBuffer", ToBuffer);
 
+	proto->SetAccessor(String::NewSymbol("width"), GetWidth);
+	proto->SetAccessor(String::NewSymbol("height"), GetHeight);
+	proto->SetAccessor(String::NewSymbol("transparent"), GetTransparent);
+
 	NODE_DEFINE_CONSTANT(target, TYPE_PNG);
 	NODE_DEFINE_CONSTANT(target, TYPE_JPEG);
 	NODE_DEFINE_CONSTANT(target, TYPE_GIF);
 	NODE_DEFINE_CONSTANT(target, TYPE_BMP);
 	NODE_DEFINE_CONSTANT(target, TYPE_RAW);
 
-	proto->SetAccessor(String::NewSymbol("width"), GetWidth);
-	proto->SetAccessor(String::NewSymbol("height"), GetHeight);
-	proto->SetAccessor(String::NewSymbol("transparent"), GetTransparent);
+	target->SetAccessor(String::NewSymbol("maxWidth"), GetMaxWidth, SetMaxWidth);
+	target->SetAccessor(String::NewSymbol("maxHeight"), GetMaxHeight, SetMaxHeight);
 
 	target->Set(String::NewSymbol("Image"), constructor->GetFunction());
 } //}}}
+
+ImageState Image::SetError(const char * err){ // {{{
+	error = err;
+	return FAIL;
+} // }}}
+
+Local<Value> Image::GetError(){ // {{{
+	Local<Value> err = Exception::Error(String::New(error ? error : "Unknow Error"));
+	error = NULL;
+	return err;
+} // }}}
+
+bool Image::IsError(){ // {{{
+	return error != NULL;
+} // }}}
+
+Handle<Value> Image::GetMaxWidth(Local<String> prop, const AccessorInfo &info){ // {{{
+	HandleScope scope;
+	return scope.Close(Number::New(maxWidth));
+} // }}}
+
+void Image::SetMaxWidth(Local<String> prop, Local<Value> value, const AccessorInfo &info){ // {{{
+	if(value->IsNumber())
+		maxWidth = value->Uint32Value();
+} // }}}
+
+Handle<Value> Image::GetMaxHeight(Local<String> prop, const AccessorInfo &info){ // {{{
+	HandleScope scope;
+	return scope.Close(Number::New(maxHeight));
+} // }}}
+
+void Image::SetMaxHeight(Local<String> prop, Local<Value> value, const AccessorInfo &info){ // {{{
+	if(value->IsNumber())
+		maxHeight = value->Uint32Value();
+} // }}}
 
 Handle<Value> Image::New(const Arguments &args){ // {{{
 	HandleScope scope;
@@ -66,7 +125,7 @@ Handle<Value> Image::New(const Arguments &args){ // {{{
 	img = new Image();
 
 	if(img->pixels->Malloc(width, height) != SUCCESS){
-		return THROW_ERROR("Out of memory.");
+		return THROW_GET_ERROR();
 	}
 
 	img->Wrap(args.This());
@@ -90,7 +149,7 @@ Handle<Value> Image::GetTransparent(Local<String> prop, const AccessorInfo &info
 	Image *img = ObjectWrap::Unwrap<Image>(info.This());
 	return scope.Close(Boolean::New(img->pixels->alpha));
 } // }}}
-		
+
 Handle<Value> Image::FillColor(const Arguments &args){ // {{{
 	HandleScope scope;
 	Image *img;
@@ -98,8 +157,8 @@ Handle<Value> Image::FillColor(const Arguments &args){ // {{{
 	double alpha;
 
 	if(!args[0]->IsNumber()
-			|| !args[1]->IsNumber()
-			|| !args[2]->IsNumber())
+	|| !args[1]->IsNumber()
+	|| !args[2]->IsNumber())
 		return THROW_INVALID_ARGUMENTS_ERROR();
 
 	cp = &color;
@@ -113,7 +172,7 @@ Handle<Value> Image::FillColor(const Arguments &args){ // {{{
 		cp->A = (uint8_t) (alpha * 0xFF);
 	}
 
-   	img = ObjectWrap::Unwrap<Image>(args.This());
+	img = ObjectWrap::Unwrap<Image>(args.This());
 	img->pixels->Fill(cp);
 
 	return scope.Close(Undefined());
@@ -151,14 +210,14 @@ Handle<Value> Image::LoadFromBuffer(const Arguments &args){ // {{{
 			return THROW_INVALID_ARGUMENTS_ERROR();
 		}
 	}
-	
+
 	input = &input_data;
 	input->data = &buffer[start];
 	input->length = end - start;
 
 	img->pixels->Free();
 	codec = codecs;
-	while(codec != NULL){
+	while(codec != NULL && !IsError()){
 		decoder = codec->decoder;
 		input->position = 0;
 		if(decoder != NULL && decoder(img->pixels, input) == SUCCESS){
@@ -166,7 +225,7 @@ Handle<Value> Image::LoadFromBuffer(const Arguments &args){ // {{{
 		}
 		codec = codec->next;
 	}
-	return THROW_ERROR("Unknown format");
+	return IsError() ? (THROW_GET_ERROR()) : THROW_ERROR("Unknow format");
 } // }}}
 
 Handle<Value> Image::CopyFromImage(const Arguments &args){ // {{{
@@ -199,7 +258,7 @@ Handle<Value> Image::CopyFromImage(const Arguments &args){ // {{{
 	}
 
 	if(dst->pixels->CopyFrom(src->pixels, x, y, w, h) != SUCCESS){
-		return THROW_ERROR("Out of memory.");
+		return THROW_GET_ERROR();
 	}
 
 	return scope.Close(Undefined());
@@ -214,8 +273,8 @@ Handle<Value> Image::DrawImage(const Arguments &args) { // {{{
 	Local<Object> obj = args[0]->ToObject();
 
 	if(!Image::constructor->HasInstance(obj)
-			|| !args[1]->IsNumber() // x
-			|| !args[2]->IsNumber()) // y
+	|| !args[1]->IsNumber() // x
+	|| !args[2]->IsNumber()) // y
 		return THROW_INVALID_ARGUMENTS_ERROR();
 
 	src = ObjectWrap::Unwrap<Image>(obj);
@@ -224,9 +283,7 @@ Handle<Value> Image::DrawImage(const Arguments &args) { // {{{
 	x = args[1]->Uint32Value();
 	y = args[2]->Uint32Value();
 
-	if(dst->pixels->Draw(src->pixels, x, y) != SUCCESS)
-		return THROW_ERROR("Error on draw image.");
-
+	dst->pixels->Draw(src->pixels, x, y);
 	return scope.Close(Undefined());
 } // }}}
 
@@ -259,7 +316,7 @@ Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
 		output->length = 0;
 		output->position = 0;
 
-		while(codec != NULL){
+		while(codec != NULL && !IsError()){
 			if(codec->type == type){
 				encoder = codec->encoder;
 				if(encoder != NULL){
@@ -272,15 +329,15 @@ Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
 					}else{
 						if(output->data != NULL)
 							free(output->data);
-						return THROW_ERROR("Encode fail.");
+						return  THROW_ERROR("Encode fail.");
 					}
 				}else{
-					return THROW_ERROR("Can't encode to this type.");
+					return THROW_ERROR("Can't encode to this format.");
 				}
 			}
 			codec = codec->next;
 		}
-		return THROW_ERROR("Unsupported type.");
+		return IsError() ? (THROW_GET_ERROR()) : (THROW_ERROR("Unsupported type."));
 	}else{
 		return THROW_ERROR("Image uninitialized.");
 	}
@@ -336,17 +393,25 @@ ImageState PixelArray::Malloc(size_t w, size_t h){ // {{{
 	data = NULL;
 
 	if(w > 0 && h > 0){
+		if(w > Image::maxWidth || h > Image::maxHeight){
+			SET_ERROR("Beyond the pixel size limit.");
+			goto fail;
+		}
+
+		if((data = (Pixel**) malloc(h * sizeof(Pixel**))) == NULL){
+			SET_ERROR("Out of memory.");
+			goto fail;
+		}
+
 		width = w;
-
-		if((data = (Pixel**) malloc(h * sizeof(Pixel**))) == NULL) goto fail;
-
 		size = width * sizeof(Pixel);
 		for(height = 0; height < h; height++){
-			line = (Pixel*) malloc(size);
-			if(line == NULL) goto free;
+			if((line = (Pixel*) malloc(size)) == NULL){
+				SET_ERROR("Out of memory.");
+				goto free;
+			}
 			memset(line, 0x00, size);
 			data[height] = line;
-			//if((data[height] = (Pixel*) calloc(1, size)) == NULL) goto free;
 		}
 		alpha = true;
 	}
@@ -404,7 +469,7 @@ ImageState PixelArray::CopyFrom(PixelArray *src, size_t x, size_t y, size_t w, s
 	return SUCCESS;
 } // }}}
 
-ImageState PixelArray::Draw(PixelArray *src, size_t x, size_t y){ // {{{
+void PixelArray::Draw(PixelArray *src, size_t x, size_t y){ // {{{
 	size_t sw, sh, dw, dh, w, h, sx, sy, size;
 	bool sa;
 	Pixel *sp, *dp;
@@ -449,8 +514,6 @@ ImageState PixelArray::Draw(PixelArray *src, size_t x, size_t y){ // {{{
 			}
 		}
 	}
-
-	return SUCCESS;
 } // }}}
 
 void PixelArray::Fill(Pixel *color){ // {{{
@@ -495,10 +558,10 @@ void PixelArray::DetectTransparent(){ // {{{
 } // }}}
 
 extern "C" {
-	void init (Handle<Object> target) { // {{{
+	void NODE_MODULE_EXPORT initialize (Handle<Object> target) { // {{{
 		Image::Initialize(target);
 	} // }}}
 }
 
-NODE_MODULE(images, init);
+NODE_MODULE(images, initialize);
 // vim600: sw=4 ts=4 fdm=marker syn=cpp

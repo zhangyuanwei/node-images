@@ -18,7 +18,7 @@ fs.readdir(DIR, function(err, items) {
             }
 
             console.log(entry + ":");
-            console.log(images.loadFromBuffer(data).size());
+            console.log(images(data).size());
             console.log();
         });
     });

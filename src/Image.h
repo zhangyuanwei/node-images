@@ -43,10 +43,12 @@ typedef struct PixelArray{
 	int32_t Size(){
 		return (height * sizeof(Pixel**)) + (width * height * sizeof(Pixel));
 	}
+
 	ImageState Malloc(size_t w, size_t h);
-	void Free();
 	ImageState CopyFrom(struct PixelArray *src, size_t x, size_t y, size_t w, size_t h);
-	ImageState Draw(struct PixelArray *src, size_t x, size_t y);
+	void Free();
+
+	void Draw(struct PixelArray *src, size_t x, size_t y);
 	void Fill(Pixel *color);
 	void DetectTransparent();
 } PixelArray;
@@ -92,12 +94,27 @@ IMAGE_CODEC(Raw);
 
 class Image: public node::ObjectWrap {
 	public:
-		//static size_t survival;
+
 		static Persistent<FunctionTemplate> constructor;
 
 		static void Initialize(Handle<Object> target);
+
+		// Error Handle
+		static ImageState SetError(const char * err);
+		static Local<Value> GetError();
+		static bool IsError();
+
+		// Size Limit
+		static size_t maxWidth, maxHeight;
+		static Handle<Value> GetMaxWidth(Local<String> prop, const AccessorInfo &info);
+		static void SetMaxWidth(Local<String> prop, Local<Value> value, const AccessorInfo &info);
+		static Handle<Value> GetMaxHeight(Local<String> prop, const AccessorInfo &info);
+		static void SetMaxHeight(Local<String> prop, Local<Value> value, const AccessorInfo &info);
+
+		// Image constructor
 		static Handle<Value> New(const Arguments &args);
 
+		// Image.prototype
 		static Handle<Value> GetWidth(Local<String> prop, const AccessorInfo &info);
 		static Handle<Value> GetHeight(Local<String> prop, const AccessorInfo &info);
 		static Handle<Value> GetTransparent(Local<String> prop, const AccessorInfo &info);
@@ -107,11 +124,11 @@ class Image: public node::ObjectWrap {
 		static Handle<Value> CopyFromImage(const Arguments &args);
 
 		static Handle<Value> DrawImage(const Arguments &args);
-
 		static Handle<Value> ToBuffer(const Arguments &args);
 
-	private:
-		PixelArray *pixels;
+	private:	
+		static const char *error;
+		static int errno;
 
 		static ImageCodec *codecs;
 		static void regCodec(ImageDecoder decoder, ImageEncoder encoder, ImageType type);
@@ -133,6 +150,8 @@ class Image: public node::ObjectWrap {
 			regCodec(DECODER(Png), ENCODER(Png), TYPE_PNG);
 #endif
 		}
+		
+		PixelArray *pixels;
 
 		Image();
 		~Image();

@@ -9,49 +9,59 @@ Cross-platform image decoder(png/jpeg/gif) and encoder(png) for Nodejs
 ## Usage
 
 ``` javascript
-var images = require("images"), //npm
-//  images = require("./index.js"), //git
-    fs = require(""fs);
+var fs = require("fs"),
+    images = require("images"),         //npm
+//  images = require("./index.js"),     //git
+    input, logo, output;
 
-var img = images.loadFromBuffer(fs.readFileSync("demo/img/rotating_earth.gif"));
-fs.writeFileSync("demo/output/gif2png.png", img.toBuffer(images.TYPE_PNG));
+input = fs.readFileSync("input.jpg");   // Load input data
+logo = fs.readFileSync("logo.jpg");     // Load logo data
+output = images(input)                  // Decode input data to image
+    .draw(images(logo), 0, 0)           // Decode and draw logo on image
+    .encode(images.TYPE_PNG);           // Encode image to a buffer
+
+fs.writeFileSync("output.png", output); // Sava output image
 ```
 
 ## API
+
 node-images provide jQuery-like Chaining API,
 You can start the chain like this:
 ```javascript
-images.createImage(width, height).XXXX()
-// OR
-images.loadFromBuffer(buffer[, start[, end]]).XXXX()
-// OR
-images.copyFromImage(image[, x, y, width, height]).XXXX()
+/* Create a new transparent image */
+images(width, height)
+
+/* Load and decode image from a buffer */
+images(buffer[, start[, end]])
+
+/* Copy from another image */
+images(image[, x, y, width, height])
 ```
 
-### .createImage(width, height)
+### images(width, height)
 Create a new transparent image
 
-### .loadFromBuffer(buffer[, start[, end]])
+### images(buffer[, start[, end]])
 Load and decode image from a buffer
 See `demo/loadFromBuffer.js`
 
-### .copyFromImage(image[, x, y, width, height])
+### images(image[, x, y, width, height])
 Copy from another image
 See `demo/copyFromImage.js`
 
-### .fillColor(red, green, blue[, alpha])
+### .fill(red, green, blue[, alpha])
 See `demo/fillColor.js`
 
-### .drawImage(image, x, y)
+### .draw(image, x, y)
 See `demo/drawImage.js`
 
-### .toBuffer(type)
+### .encode(type)
 Encode image to buffer.
 Return buffer
 See `demo/toBuffer.js`
 
 ### .size([width, height])
-Return image size or **TODO:set image size**
+Return image size or **TODO:** *set image size*
 ```javascript
 {
 	width:123,
@@ -60,8 +70,10 @@ Return image size or **TODO:set image size**
 ```
 
 ### .width([width])
-Return image width or **TODO:set image width**
+Return image width or **TODO:** *set image width*
 
 ### .height([height])
-Return image height or **TODO:set image height**
+Return image height or **TODO:** *set image height*
 
+### images.setLimit(width, height)
+Set the limit size of each image
