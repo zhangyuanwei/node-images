@@ -44,12 +44,19 @@ typedef struct PixelArray{
 		return (height * sizeof(Pixel**)) + (width * height * sizeof(Pixel));
 	}
 
+	// Memory
 	ImageState Malloc(size_t w, size_t h);
 	ImageState CopyFrom(struct PixelArray *src, size_t x, size_t y, size_t w, size_t h);
 	void Free();
 
+	// Draw
 	void Draw(struct PixelArray *src, size_t x, size_t y);
 	void Fill(Pixel *color);
+
+	// Transform
+	ImageState SetWidth(size_t w);
+	ImageState SetHeight(size_t h);
+
 	void DetectTransparent();
 } PixelArray;
 
@@ -100,9 +107,9 @@ class Image: public node::ObjectWrap {
 		static void Initialize(Handle<Object> target);
 
 		// Error Handle
-		static ImageState SetError(const char * err);
-		static Local<Value> GetError();
-		static bool IsError();
+		static ImageState setError(const char * err);
+		static Local<Value> getError();
+		static bool isError();
 
 		// Size Limit
 		static size_t maxWidth, maxHeight;
@@ -116,7 +123,9 @@ class Image: public node::ObjectWrap {
 
 		// Image.prototype
 		static Handle<Value> GetWidth(Local<String> prop, const AccessorInfo &info);
+		static void SetWidth(Local<String> prop, Local<Value> value, const AccessorInfo &info);
 		static Handle<Value> GetHeight(Local<String> prop, const AccessorInfo &info);
+		static void SetHeight(Local<String> prop, Local<Value> value, const AccessorInfo &info);
 		static Handle<Value> GetTransparent(Local<String> prop, const AccessorInfo &info);
 
 		static Handle<Value> FillColor(const Arguments &args);

@@ -19,33 +19,39 @@ prototype = {
         }
         this._handle.copyFromImage(img, x, y, width, height);
     },
-    fillColor: function(red, green, blue, alpha) {
+    fill: function(red, green, blue, alpha) {
         this._handle.fillColor(red, green, blue, alpha);
     },
-    drawImage: function(img, x, y) {
+    draw: function(img, x, y) {
         if (img instanceof WrappedImage) {
             img = img._handle;
         }
         this._handle.drawImage(img, x, y);
     },
-    toBuffer: function(type) {
+    encode: function(type) {
         //TODO fastBuffer
         return this._handle.toBuffer(type);
     },
     size: function(width, height) {
-        //TODO set width and height
-        return {
+        var size;
+        if (width === undefined) return {
             width: this.width(),
             height: this.height()
         };
+
+        if (height === undefined) {
+            size = this.size();
+            height = width * size.height / size.width;
+        }
+        this.width(width).height(height);
     },
     width: function(width) {
-        //TODO set width
-        return this._handle.width;
+        if (width === undefined) return this._handle.width;
+        this._handle.width = width;
     },
     height: function(height) {
-        //TODO set height
-        return this._handle.height;
+        if (height === undefined) return this._handle.height;
+        this._handle.height = height;
     }
 };
 
@@ -69,9 +75,9 @@ function bind(target, obj, aliases) {
 }
 
 bind(WrappedImage.prototype, prototype, {
-    "fillColor": ["fill"],
-    "toBuffer": ["encode"],
-    "drawImage": ["draw"]
+    "fill": ["fillColor"],
+    "encode": ["toBuffer"],
+    "draw": ["drawImage"]
 });
 
 function images(obj) {
@@ -90,7 +96,7 @@ images.TYPE_PNG = _images.TYPE_PNG;
 //images.TYPE_JPEG = _images.TYPE_JPEG;
 //images.TYPE_GIF = _images.TYPE_GIF;
 //images.TYPE_BMP = _images.TYPE_BMP;
-//images.TYPE_RAW = _images.TYPE_RAW;
+images.TYPE_RAW = _images.TYPE_RAW;
 
 images.Image = WrappedImage;
 

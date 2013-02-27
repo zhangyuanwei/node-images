@@ -21,12 +21,12 @@
 #define ERROR(type, msg) Exception::type##Error(String::New(msg))
 #define THROW(err) ThrowException(err)
 
-#define SET_ERROR(msg) (Image::SetError(FILE_LINE(msg)))
-#define GET_ERROR() (Image::GetError())
+#define SET_ERROR(msg) (Image::setError(FILE_LINE(msg)))
+#define GET_ERROR() (Image::getError())
 #define THROW_ERROR(msg) THROW(ERROR(,FILE_LINE(msg)))
 #define THROW_GET_ERROR() THROW(GET_ERROR())
 
-#define THROW_TYPE_ERROR(msg) THROW(ERROR(Type, msg))
+#define THROW_TYPE_ERROR(msg) THROW(ERROR(Type, FILE_LINE(msg)))
 #define THROW_INVALID_ARGUMENTS_ERROR(msg) THROW_TYPE_ERROR("Invalid arguments" msg)
 
 #define DEFAULT_WIDTH_LIMIT  10240 // default limit 10000x10000
@@ -60,8 +60,8 @@ void Image::Initialize(Handle<Object> target){ // {{{
 	NODE_SET_PROTOTYPE_METHOD(constructor, "drawImage", DrawImage);
 	NODE_SET_PROTOTYPE_METHOD(constructor, "toBuffer", ToBuffer);
 
-	proto->SetAccessor(String::NewSymbol("width"), GetWidth);
-	proto->SetAccessor(String::NewSymbol("height"), GetHeight);
+	proto->SetAccessor(String::NewSymbol("width"), GetWidth, SetWidth);
+	proto->SetAccessor(String::NewSymbol("height"), GetHeight, SetHeight);
 	proto->SetAccessor(String::NewSymbol("transparent"), GetTransparent);
 
 	NODE_DEFINE_CONSTANT(target, TYPE_PNG);
@@ -76,18 +76,18 @@ void Image::Initialize(Handle<Object> target){ // {{{
 	target->Set(String::NewSymbol("Image"), constructor->GetFunction());
 } //}}}
 
-ImageState Image::SetError(const char * err){ // {{{
+ImageState Image::setError(const char * err){ // {{{
 	error = err;
 	return FAIL;
 } // }}}
 
-Local<Value> Image::GetError(){ // {{{
+Local<Value> Image::getError(){ // {{{
 	Local<Value> err = Exception::Error(String::New(error ? error : "Unknow Error"));
 	error = NULL;
 	return err;
 } // }}}
 
-bool Image::IsError(){ // {{{
+bool Image::isError(){ // {{{
 	return error != NULL;
 } // }}}
 
@@ -138,10 +138,24 @@ Handle<Value> Image::GetWidth(Local<String> prop, const AccessorInfo &info){ // 
 	return scope.Close(Number::New(img->pixels->width));
 } // }}}
 
+void Image::SetWidth(Local<String> prop, Local<Value> value, const AccessorInfo &info){ // {{{
+	if(value->IsNumber()){
+		Image *img = ObjectWrap::Unwrap<Image>(info.This());
+		img->pixels->SetWidth(value->Uint32Value());
+	}
+} // }}}
+
 Handle<Value> Image::GetHeight(Local<String> prop, const AccessorInfo &info){ // {{{
 	HandleScope scope;
 	Image *img = ObjectWrap::Unwrap<Image>(info.This());
 	return scope.Close(Number::New(img->pixels->height));
+} // }}}
+
+void Image::SetHeight(Local<String> prop, Local<Value> value, const AccessorInfo &info){ // {{{
+	if(value->IsNumber()){
+		Image *img = ObjectWrap::Unwrap<Image>(info.This());
+		img->pixels->SetHeight(value->Uint32Value());
+	}
 } // }}}
 
 Handle<Value> Image::GetTransparent(Local<String> prop, const AccessorInfo &info){ // {{{
@@ -217,7 +231,7 @@ Handle<Value> Image::LoadFromBuffer(const Arguments &args){ // {{{
 
 	img->pixels->Free();
 	codec = codecs;
-	while(codec != NULL && !IsError()){
+	while(codec != NULL && !isError()){
 		decoder = codec->decoder;
 		input->position = 0;
 		if(decoder != NULL && decoder(img->pixels, input) == SUCCESS){
@@ -225,7 +239,7 @@ Handle<Value> Image::LoadFromBuffer(const Arguments &args){ // {{{
 		}
 		codec = codec->next;
 	}
-	return IsError() ? (THROW_GET_ERROR()) : THROW_ERROR("Unknow format");
+	return isError() ? (THROW_GET_ERROR()) : THROW_ERROR("Unknow format");
 } // }}}
 
 Handle<Value> Image::CopyFromImage(const Arguments &args){ // {{{
@@ -316,7 +330,7 @@ Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
 		output->length = 0;
 		output->position = 0;
 
-		while(codec != NULL && !IsError()){
+		while(codec != NULL && !isError()){
 			if(codec->type == type){
 				encoder = codec->encoder;
 				if(encoder != NULL){
@@ -337,7 +351,7 @@ Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
 			}
 			codec = codec->next;
 		}
-		return IsError() ? (THROW_GET_ERROR()) : (THROW_ERROR("Unsupported type."));
+		return isError() ? (THROW_GET_ERROR()) : (THROW_ERROR("Unsupported type."));
 	}else{
 		return THROW_ERROR("Image uninitialized.");
 	}
@@ -520,9 +534,9 @@ void PixelArray::Fill(Pixel *color){ // {{{
 	size_t i, size;
 	uint8_t a;
 	bool same;
-	Pixel *row;
+	Pixel *row, *p;
 
-	if(height > 0 && data != NULL){
+	if(data != NULL){
 		a = color->A;
 		same = (color->R == a && color->G == a && color->B == a);
 		row = data[0];
@@ -530,9 +544,9 @@ void PixelArray::Fill(Pixel *color){ // {{{
 			size = width * sizeof(Pixel);
 			memset(row, a, size);
 		}else{
-			size = sizeof(Pixel);
-			for(i = 0; i < width; i++)
-				memcpy(&row[i], color, size);
+			for(i = 0, p = row; i < width; i++, p++){
+				*p = *color;
+			}
 		}
 
 		size = width * sizeof(Pixel);
@@ -543,13 +557,98 @@ void PixelArray::Fill(Pixel *color){ // {{{
 	}
 } // }}}
 
+ImageState PixelArray::SetWidth(size_t w){ // {{{
+	size_t size, *index, *p, x, y;
+	double scale;
+	Pixel *src, *dst;
+	PixelArray newArray, *pixels;
+
+
+	if(data != NULL){
+		if(w > Image::maxWidth){
+			return SET_ERROR("Beyond the width limit.");
+		}
+
+		if(w == width){
+			return SUCCESS;
+		}
+		
+		size = w * sizeof(size_t);
+		if((index = (size_t *) malloc(size)) == NULL){
+			return SET_ERROR("Out of memory.");
+		}
+		
+		scale = ((double) width) / w;
+		for(x = 0, p = index; x < w; x++, p++){
+			*p = (size_t) (scale * x);
+		}
+
+		pixels = &newArray;
+		if(pixels->Malloc(w, height) != SUCCESS){
+			free(index);
+			return FAIL;
+		}
+		pixels->alpha = alpha;
+	
+		for(y = 0; y < height; y++){
+			src = data[y];
+			dst = pixels->data[y]; 
+			for(x = 0, p = index; x < w; x++, p++){
+				dst[x] = src[*p];
+			}
+		}
+		free(index);
+		Free();
+		*this = *pixels;
+	}
+	return SUCCESS;
+} // }}}
+
+ImageState PixelArray::SetHeight(size_t h){ // {{{
+	PixelArray newArray, *pixels;
+	size_t size, y;
+	double scale;
+	Pixel *src, *dst;
+
+	if(data != NULL){
+
+		if(h > Image::maxHeight){
+			return SET_ERROR("Beyond the height limit.");
+		}
+
+		if(h == height){
+			return SUCCESS;
+		}
+
+		pixels = &newArray;	
+		if(pixels->Malloc(width, h) != SUCCESS){
+			return FAIL;
+		}
+		pixels->alpha = alpha;
+		
+		size = width * sizeof(Pixel);
+		scale = ((double) height) / h;
+		for(y = 0; y < h; y++){
+			src = data[(size_t) (scale * y)];
+			dst = pixels->data[y];
+			memcpy(dst, src, size);
+		}
+		
+		Free();
+		*this = *pixels;
+	}
+	return SUCCESS;
+} // }}}
+
 void PixelArray::DetectTransparent(){ // {{{
 	size_t x, y;
+	Pixel *pixel;
 	alpha = false;
 
 	for(y = 0; y < height; y++){
-		for(x = 0; x < width; x++){
-			if(data[y][x].A != 0xFF){
+		pixel = data[y];
+		for(x = 0; x < width; x++, pixel++){
+			if(pixel->A != 0xFF){
 				alpha = true;
 				return;
 			}
