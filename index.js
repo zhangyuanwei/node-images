@@ -1,7 +1,10 @@
 var USE_OLD_API = false,
+    fs = require("fs"),
+	path = require("path"),
     _images = require("./binding.js"),
     _Image = _images.Image,
     slice = Array.prototype.slice,
+    FILE_TYPE_MAP,
     prototype;
 
 function WrappedImage(width, height) {
@@ -31,6 +34,10 @@ prototype = {
     encode: function(type) {
         //TODO fastBuffer
         return this._handle.toBuffer(type);
+    },
+    save: function(file, type) {
+        if (type === undefined) type = FILE_TYPE_MAP[path.extname(file)];
+        fs.writeFileSync(file, this.encode(type));
     },
     size: function(width, height) {
         var size;
@@ -86,6 +93,8 @@ function images(obj) {
         constructor = images.loadFromBuffer;
     } else if (obj instanceof WrappedImage) {
         constructor = images.copyFromImage;
+    } else if (typeof(obj) == "string") {
+        constructor = images.loadFromFile;
     } else {
         constructor = images.createImage;
     }
@@ -93,12 +102,25 @@ function images(obj) {
 }
 
 images.TYPE_PNG = _images.TYPE_PNG;
-//images.TYPE_JPEG = _images.TYPE_JPEG;
-//images.TYPE_GIF = _images.TYPE_GIF;
-//images.TYPE_BMP = _images.TYPE_BMP;
+images.TYPE_JPEG = _images.TYPE_JPEG;
+images.TYPE_GIF = _images.TYPE_GIF;
+images.TYPE_BMP = _images.TYPE_BMP;
 images.TYPE_RAW = _images.TYPE_RAW;
 
+FILE_TYPE_MAP = {
+    ".png": images.TYPE_PNG,
+    ".jpg": images.TYPE_JPEG,
+    ".jpeg": images.TYPE_JPEG,
+    ".gif": images.TYPE_GIF,
+    ".bmp": images.TYPE_BMP,
+    ".raw": images.TYPE_RAW
+};
+
 images.Image = WrappedImage;
+
+images.loadFromFile = function(file) {
+    return images.loadFromBuffer(fs.readFileSync(file));
+};
 
 images.createImage = function(width, height) {
     return WrappedImage(width, height);
