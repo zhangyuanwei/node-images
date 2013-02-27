@@ -1,7 +1,7 @@
 node-images
 ===========
 
-Cross-platform image decoder(png/jpeg/gif) and encoder(png) for Nodejs
+Cross-platform image decoder(png/jpeg/gif) and encoder(png) for Nodejs  
 Node.js轻量级跨平台图像编解码库
 
 ## Installation 安装
@@ -24,7 +24,7 @@ images("input.jpg")                     //Load image from file
 
 ## API 接口
 
-node-images provide jQuery-like Chaining API,You can start the chain like this:
+node-images provide jQuery-like Chaining API,You can start the chain like this:  
 node-images 提供了类似jQuery的链式调用API,您可以这样开始:
 
 ```javascript
@@ -91,7 +91,7 @@ Return buffer
 **注意:该操作将会切断调用链**  
 
 
-### .save(fill[, type])
+### .save(file[, type])
 
 Encoding and save the current image to a *file*, if the *type* is not specified, *type* well be automatically determined according to the *file*  
 编码并保存当前图像到*file*,如果type未指定,则根据*file*自动判断文件类型

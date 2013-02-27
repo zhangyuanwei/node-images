@@ -1,10 +1,10 @@
 {
     "name": "images",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Cross-platform image decoder(png/jpeg/gif) and encoder(png) for Nodejs",
     "main": "index.js",
     "scripts": {
-        "test": "node demo/runAllDemo.js",
+        "test": "node test.js",
         "install": "node install.js"
     },
     "repository": {
