@@ -18,7 +18,7 @@ images("input.jpg")                     //Load image from file
                                         //等比缩放图像到400像素宽
     .draw(images("logo.png"), 10, 10)   //Drawn logo at coordinates (10,10)
                                         //在(10,10)处绘制Logo
-    .write("output.png")                //Save the image to a file
+    .save("output.png")                //Save the image to a file
                                         //保存图片到文件
 ```
 
