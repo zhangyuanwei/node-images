@@ -64,7 +64,7 @@ DECODER_FN(Jpeg){
 		jpeg_read_scanlines(&cinfo, buffer, 1);
 		memcpy(output->data[line], buffer[0], row_stride);
 	}
-	output->alpha = false;
+	output->type = SOLID;
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);

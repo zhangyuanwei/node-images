@@ -35,11 +35,17 @@ typedef struct Pixel{
 	void Merge(struct Pixel *pixel);
 } Pixel;
 
+typedef enum {
+	EMPTY,
+	ALPHA,
+	SOLID,
+} PixelArrayType;
+
 typedef struct PixelArray{
 	Pixel **data;
 	size_t width;
 	size_t height;
-	bool alpha;
+	PixelArrayType type;
 	int32_t Size(){
 		return (height * sizeof(Pixel**)) + (width * height * sizeof(Pixel));
 	}

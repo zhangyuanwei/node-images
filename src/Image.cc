@@ -161,14 +161,13 @@ void Image::SetHeight(Local<String> prop, Local<Value> value, const AccessorInfo
 Handle<Value> Image::GetTransparent(Local<String> prop, const AccessorInfo &info){ // {{{
 	HandleScope scope;
 	Image *img = ObjectWrap::Unwrap<Image>(info.This());
-	return scope.Close(Boolean::New(img->pixels->alpha));
+	return scope.Close(Number::New(img->pixels->type));
 } // }}}
 
 Handle<Value> Image::FillColor(const Arguments &args){ // {{{
 	HandleScope scope;
 	Image *img;
 	Pixel color, *cp;
-	double alpha;
 
 	if(!args[0]->IsNumber()
 	|| !args[1]->IsNumber()
@@ -182,8 +181,7 @@ Handle<Value> Image::FillColor(const Arguments &args){ // {{{
 	cp->A = 0xFF;
 
 	if(args[3]->IsNumber()){
-		alpha = args[3]->NumberValue();
-		cp->A = (uint8_t) (alpha * 0xFF);
+		cp->A = (uint8_t) (args[3]->NumberValue() * 0xFF);
 	}
 
 	img = ObjectWrap::Unwrap<Image>(args.This());
@@ -370,8 +368,8 @@ void Image::regCodec(ImageDecoder decoder, ImageEncoder encoder, ImageType type)
 Image::Image(){ // {{{
 	pixels = (PixelArray *) malloc(sizeof(PixelArray));
 	pixels->width = pixels->height = 0;
+	pixels->type = EMPTY;
 	pixels->data = NULL;
-	pixels->alpha = false;
 	V8::AdjustAmountOfExternalAllocatedMemory(sizeof(PixelArray) + sizeof(Image));
 	//survival++;
 } // }}}
@@ -402,10 +400,6 @@ ImageState PixelArray::Malloc(size_t w, size_t h){ // {{{
 	int32_t size;
 	Pixel *line;
 
-	width = height = 0;
-	alpha = false;
-	data = NULL;
-
 	if(w > 0 && h > 0){
 		if(w > Image::maxWidth || h > Image::maxHeight){
 			SET_ERROR("Beyond the pixel size limit.");
@@ -427,7 +421,6 @@ ImageState PixelArray::Malloc(size_t w, size_t h){ // {{{
 			memset(line, 0x00, size);
 			data[height] = line;
 		}
-		alpha = true;
 	}
 	V8::AdjustAmountOfExternalAllocatedMemory(Size());
 	return SUCCESS;
@@ -439,6 +432,7 @@ free:
 
 fail:
 	width = height = 0;
+	type = EMPTY;
 	data = NULL;
 	return FAIL;
 } // }}}
@@ -452,11 +446,12 @@ void PixelArray::Free(){ // {{{
 			if(data[h] != NULL) free(data[h]);
 		}
 		free(data);
-		data = NULL;
 		V8::AdjustAmountOfExternalAllocatedMemory(-Size());
 	}
+
 	width = height = 0;
-	alpha = false;
+	type = EMPTY;;
+	data = NULL;
 } // }}}
 
 ImageState PixelArray::CopyFrom(PixelArray *src, size_t x, size_t y, size_t w, size_t h){ // {{{
@@ -465,34 +460,34 @@ ImageState PixelArray::CopyFrom(PixelArray *src, size_t x, size_t y, size_t w, s
 	sw = src->width;
 	sh = src->height;
 
-	Free();
 	if(src->data && x < sw && y < sh){
 		if(x + w > sw) w = sw - x;
 		if(y + h > sh) h = sh - y;
 
+		Free();
 		size = w * sizeof(Pixel);
-
 		if(Malloc(w, h) != SUCCESS) return FAIL;
 
 		while(h--){
 			memcpy(data[h], &(src->data[y+h][x]), size);
 		}
-		alpha = src->alpha;
+		type = src->type;
 	}
 
 	return SUCCESS;
 } // }}}
 
 void PixelArray::Draw(PixelArray *src, size_t x, size_t y){ // {{{
+	//TODO
 	size_t sw, sh, dw, dh, w, h, sx, sy, size;
-	bool sa;
+	PixelArrayType st;
 	Pixel *sp, *dp;
 
 	sw = src->width;
 	sh = src->height;
 	dw = width;
 	dh = height;
-	sa = src->alpha;
+	st = src->type;
 
 	/* for TEST out put first pixel;
 
@@ -508,25 +503,28 @@ void PixelArray::Draw(PixelArray *src, size_t x, size_t y){ // {{{
 		h = (y + sh < dh) ? sh : (dh - y);
 		size = w * sizeof(Pixel);
 
-		for(sy = 0; sy < h; sy++){
-			if(!sa){ // src not transparent
+		if(type == EMPTY || st == SOLID){ // src opaque or dest empty
+			for(sy = 0; sy < h; sy++){
 				sp = src->data[sy];
 				dp = &(data[y + sy][x]);
 				memcpy(dp, sp, size);
-			}else{
+			}
+		}else{
+			for(sy = 0; sy < h; sy++){
 				for(sx = 0; sx < w; sx++){
 					sp = &(src->data[sy][sx]);
 					dp = &(data[y + sy][x + sx]);
 					if(sp->A == 0x00){ // src pixel transparent
-						continue;
+						//DO Nothing
 					}else if(sp->A == 0xFF || dp->A == 0x00){ // src pixel opaque or dest pixel transparent
-						memcpy(dp, sp, sizeof(Pixel));
+						*dp = *sp;
 					}else{
 						dp->Merge(sp);
 					}
 				}
 			}
 		}
+		DetectTransparent();
 	}
 } // }}}
 
@@ -538,6 +536,8 @@ void PixelArray::Fill(Pixel *color){ // {{{
 
 	if(data != NULL){
 		a = color->A;
+		if(a == 0x00 && type == EMPTY) return;
+
 		same = (color->R == a && color->G == a && color->B == a);
 		row = data[0];
 		if(same){
@@ -553,7 +553,8 @@ void PixelArray::Fill(Pixel *color){ // {{{
 		for(i = 1; i < height; i++){
 			memcpy(data[i], row, size);
 		}
-		alpha = a < 0xFF;
+
+		type = ((a == 0xFF) ? SOLID :((a == 0x00) ? EMPTY : ALPHA));
 	}
 } // }}}
 
@@ -572,12 +573,12 @@ ImageState PixelArray::SetWidth(size_t w){ // {{{
 		if(w == width){
 			return SUCCESS;
 		}
-		
+
 		size = w * sizeof(size_t);
 		if((index = (size_t *) malloc(size)) == NULL){
 			return SET_ERROR("Out of memory.");
 		}
-		
+
 		scale = ((double) width) / w;
 		for(x = 0, p = index; x < w; x++, p++){
 			*p = (size_t) (scale * x);
@@ -588,8 +589,8 @@ ImageState PixelArray::SetWidth(size_t w){ // {{{
 			free(index);
 			return FAIL;
 		}
-		pixels->alpha = alpha;
-	
+		pixels->type = type;
+
 		for(y = 0; y < height; y++){
 			src = data[y];
 			dst = pixels->data[y]; 
@@ -624,8 +625,8 @@ ImageState PixelArray::SetHeight(size_t h){ // {{{
 		if(pixels->Malloc(width, h) != SUCCESS){
 			return FAIL;
 		}
-		pixels->alpha = alpha;
-		
+		pixels->type = type;
+
 		size = width * sizeof(Pixel);
 		scale = ((double) height) / h;
 		for(y = 0; y < h; y++){
@@ -633,7 +634,7 @@ ImageState PixelArray::SetHeight(size_t h){ // {{{
 			dst = pixels->data[y];
 			memcpy(dst, src, size);
 		}
-		
+
 		Free();
 		*this = *pixels;
 	}
@@ -643,17 +644,33 @@ ImageState PixelArray::SetHeight(size_t h){ // {{{
 void PixelArray::DetectTransparent(){ // {{{
 	size_t x, y;
 	Pixel *pixel;
-	alpha = false;
+	bool empty, opaque, alpha;
+	type = EMPTY;
+
+	empty = opaque = alpha = false;
 
 	for(y = 0; y < height; y++){
 		pixel = data[y];
 		for(x = 0; x < width; x++, pixel++){
-			if(pixel->A != 0xFF){
-				alpha = true;
+			switch(pixel->A){
+				case 0x00:
+					empty = true;
+					break;
+				case 0xFF:
+					opaque = true;
+					break;
+				default:
+					alpha = true;
+					break;
+			}
+
+			if(alpha || (empty && opaque)){
+				type = ALPHA;
 				return;
 			}
 		}
 	}
+	type = opaque ? SOLID : EMPTY;
 } // }}}
 
 extern "C" {

@@ -52,7 +52,7 @@ DECODER_FN(Raw){ // {{{
 			sp++;
 		}
 	}
-	output->alpha = false;
+	output->type = SOLID;
 	return SUCCESS;
 } // }}}
 
