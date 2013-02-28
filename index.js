@@ -1,10 +1,11 @@
 var USE_OLD_API = false,
     fs = require("fs"),
-	path = require("path"),
+    path = require("path"),
     _images = require("./binding.js"),
     _Image = _images.Image,
     slice = Array.prototype.slice,
     FILE_TYPE_MAP,
+    CONFIG_GENERATOR,
     prototype;
 
 function WrappedImage(width, height) {
@@ -31,13 +32,24 @@ prototype = {
         }
         this._handle.drawImage(img, x, y);
     },
-    encode: function(type) {
-        //TODO fastBuffer
-        return this._handle.toBuffer(type);
+    encode: function(type, config) {
+        var configurator;
+        if (typeof(type) != "number") {
+            type = String(type).toLowerCase();
+            type = (FILE_TYPE_MAP["." + type] || FILE_TYPE_MAP[type]);
+        }
+        if (config != undefined) {
+            configurator = CONFIG_GENERATOR[type];
+            config = configurator && configurator(config);
+        }
+        return this._handle.toBuffer(type, config);
     },
-    save: function(file, type) {
-        if (type === undefined) type = FILE_TYPE_MAP[path.extname(file)];
-        fs.writeFileSync(file, this.encode(type));
+    save: function(file, type, config) {
+        if (type && typeof(type) == "object") {
+            config = type;
+            type = undefined;
+        }
+        fs.writeFileSync(file, this.encode(type || path.extname(file), config));
     },
     size: function(width, height) {
         var size;
@@ -114,6 +126,17 @@ FILE_TYPE_MAP = {
     ".gif": images.TYPE_GIF,
     ".bmp": images.TYPE_BMP,
     ".raw": images.TYPE_RAW
+};
+
+CONFIG_GENERATOR = [];
+//CONFIG_GENERATOR[images.TYPE_PNG]
+CONFIG_GENERATOR[images.TYPE_JPEG] = function(config) {
+    var JPEG_CONFIG_SIZE = 5,
+        ret = new Buffer(JPEG_CONFIG_SIZE);
+
+    ret.write("JPEG", 0, 4, "ascii");
+    ret[4] = config.quality === undefined ? 100 : config.quality;
+    return ret;
 };
 
 images.Image = WrappedImage;

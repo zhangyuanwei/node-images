@@ -15,7 +15,7 @@ using namespace v8;
 using namespace node;
 
 typedef enum {
-	TYPE_PNG,
+	TYPE_PNG = 1,
 	TYPE_JPEG,
 	TYPE_GIF,
 	TYPE_BMP,
@@ -23,7 +23,7 @@ typedef enum {
 } ImageType;
 
 typedef enum {
-	FAIL,
+	FAIL = 0,
 	SUCCESS,
 } ImageState;
 
@@ -36,7 +36,7 @@ typedef struct Pixel{
 } Pixel;
 
 typedef enum {
-	EMPTY,
+	EMPTY = 0,
 	ALPHA,
 	SOLID,
 } PixelArrayType;
@@ -73,7 +73,12 @@ typedef struct {
 	//ImageType type;
 } ImageData;
 
-typedef ImageState (* ImageEncoder)(PixelArray *input, ImageData *output);
+typedef struct {
+	char *data;
+	size_t length;
+} ImageConfig;
+
+typedef ImageState (* ImageEncoder)(PixelArray *input, ImageData *output, ImageConfig *config);
 typedef ImageState (* ImageDecoder)(PixelArray *output, ImageData *input);
 
 typedef struct ImageCodec{
@@ -84,7 +89,7 @@ typedef struct ImageCodec{
 } ImageCodec;
 
 #define ENCODER(type) encode ## type
-#define ENCODER_FN(type) ImageState ENCODER(type)(PixelArray *input, ImageData *output)
+#define ENCODER_FN(type) ImageState ENCODER(type)(PixelArray *input, ImageData *output, ImageConfig *config)
 #define DECODER(type) decode ## type
 #define DECODER_FN(type) ImageState DECODER(type)(PixelArray *output, ImageData *input)
 #define IMAGE_CODEC(type) DECODER_FN(type); ENCODER_FN(type)

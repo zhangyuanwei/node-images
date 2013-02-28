@@ -305,6 +305,7 @@ Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
 	Image *img;
 	ImageType type;
 	PixelArray *pixels;
+	ImageConfig _config, *config;
 	ImageCodec *codec;
 	ImageEncoder encoder;
 
@@ -315,8 +316,15 @@ Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
 
 	if(!args[0]->IsNumber())
 		return THROW_INVALID_ARGUMENTS_ERROR();
-
 	type = (ImageType) args[0]->Uint32Value();
+
+	config = NULL;
+	if(Buffer::HasInstance(args[1])){
+		config = &_config;
+		config->data = Buffer::Data(args[1]->ToObject());
+		config->length = Buffer::Length(args[1]->ToObject());
+	}
+
 	img = ObjectWrap::Unwrap<Image>(args.This());
 	pixels = img->pixels;
 
@@ -332,7 +340,7 @@ Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
 			if(codec->type == type){
 				encoder = codec->encoder;
 				if(encoder != NULL){
-					if(encoder(pixels, output) == SUCCESS){
+					if(encoder(pixels, output, config) == SUCCESS){
 						length = output->position;
 						buffer = Buffer::New(length);
 						memcpy(Buffer::Data(buffer), output->data, length);
