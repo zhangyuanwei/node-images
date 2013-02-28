@@ -1,7 +1,7 @@
 {
     "name": "images",
     "version": "1.1.1",
-    "description": "Cross-platform image decoder(png/jpeg/gif) and encoder(png) for Nodejs",
+    "description": "Cross-platform image decoder(png/jpeg/gif) and encoder(png/jpeg) for Node.js",
     "main": "index.js",
     "scripts": {
         "test": "node test.js",
@@ -24,5 +24,5 @@
     "license": "BSD",
     "gypfile": true,
     "readmeFilename": "README.md",
-    "gitHead": "9921ad4313ba247e60d3dc9f57f80cc40b629f9a"
+    "gitHead": "7c1bfcdf4dcdd08cf3e020ce853e8f3ad9907a35"
 }

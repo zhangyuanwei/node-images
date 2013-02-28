@@ -22,10 +22,7 @@ typedef struct {
 } jpeg_compress_config;
 
 jpeg_compress_config default_compress_config = {
-	'J',
-	'P',
-	'E',
-	'G',
+	'J','P','E','G',
 	100,
 };
 

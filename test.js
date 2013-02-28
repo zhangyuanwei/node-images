@@ -34,8 +34,8 @@ assert.deepEqual(images(123, 456).size(), WH_123_456);
 
 [
     "png",
-//    "jpg",
-//    "jpeg",
+    "jpg",
+    "jpeg",
 //    "gif",
 "raw" //
 ].forEach(function(ext) {
@@ -83,4 +83,5 @@ assert.doesNotThrow(function(){
 assert.throws(function(){
 	images("demo/img/PNG_transparency_demonstration.png");
 });
-//TODO Fill
+
+console.log("pass all test! ^_^");
