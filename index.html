@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Node-images : Cross-platform image decoder(png/jpeg/gif) and encoder(png/jpeg) for Nodejs" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Node-images</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/zhangyuanwei/node-images">View on GitHub</a>
+
+          <h1 id="project_title">Node-images</h1>
+          <h2 id="project_tagline">Cross-platform image decoder(png/jpeg/gif) and encoder(png/jpeg) for Nodejs</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/zhangyuanwei/node-images/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/zhangyuanwei/node-images/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1><img src="https://raw.github.com/zhangyuanwei/node-images/master/demo/logo.png" alt="images logo"></h1>
+
+<p>Cross-platform image decoder(png/jpeg/gif) and encoder(png/jpeg) for Node.js<br>
+Node.js轻量级跨平台图像编解码库</p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">images</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">"images"</span><span class="p">);</span>
+
+<span class="nx">images</span><span class="p">(</span><span class="s2">"input.jpg"</span><span class="p">)</span>                     <span class="c1">//Load image from file </span>
+                                        <span class="c1">//加载图像文件</span>
+    <span class="p">.</span><span class="nx">size</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>                          <span class="c1">//Geometric scaling the image to 400 pixels width</span>
+                                        <span class="c1">//等比缩放图像到400像素宽</span>
+    <span class="p">.</span><span class="nx">draw</span><span class="p">(</span><span class="nx">images</span><span class="p">(</span><span class="s2">"logo.png"</span><span class="p">),</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>   <span class="c1">//Drawn logo at coordinates (10,10)</span>
+                                        <span class="c1">//在(10,10)处绘制Logo</span>
+    <span class="p">.</span><span class="nx">save</span><span class="p">(</span><span class="s2">"output.jpg"</span><span class="p">,</span> <span class="p">{</span>               <span class="c1">//Save the image to a file,whih quality 50</span>
+        <span class="nx">quality</span> <span class="o">:</span> <span class="mi">50</span>                    <span class="c1">//保存图片到文件,图片质量为50</span>
+    <span class="p">});</span>
+</pre></div>
+
+<h2>Features 功能特性</h2>
+
+<ul>
+<li>Lightweight:no need to install any image processing library.</li>
+<li>轻量级：无需安装任何图像处理库。</li>
+<li>Cross-platform: Released a compiled .node file on windows, just download and start.</li>
+<li>跨平台：Windows下发布了编译好的.node文件,下载就能用。</li>
+<li>Easy-to-use: Provide jQuery-like chaining API.Simple and reliable!</li>
+<li>方便用：jQuery风格的API，简单可依赖。</li>
+</ul><h2>Installation 安装</h2>
+
+<pre><code>$ npm install images
+</code></pre>
+
+<h2>API 接口</h2>
+
+<p>node-images provide jQuery-like Chaining API,You can start the chain like this:<br>
+node-images 提供了类似jQuery的链式调用API,您可以这样开始:</p>
+
+<div class="highlight"><pre><span class="cm">/* Load and decode image from file */</span>
+<span class="cm">/* 从指定文件加载并解码图像 */</span>
+<span class="nx">images</span><span class="p">(</span><span class="nx">file</span><span class="p">)</span>
+
+<span class="cm">/* Create a new transparent image */</span>
+<span class="cm">/* 创建一个指定宽高的透明图像 */</span>
+<span class="nx">images</span><span class="p">(</span><span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">)</span>
+
+<span class="cm">/* Load and decode image from a buffer */</span>
+<span class="cm">/* 从Buffer数据中解码图像 */</span>
+<span class="nx">images</span><span class="p">(</span><span class="nx">buffer</span><span class="p">[,</span> <span class="nx">start</span><span class="p">[,</span> <span class="nx">end</span><span class="p">]])</span>
+
+<span class="cm">/* Copy from another image */</span>
+<span class="cm">/* 从另一个图像中复制区域来创建图像 */</span>
+<span class="nx">images</span><span class="p">(</span><span class="nx">image</span><span class="p">[,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">])</span>
+</pre></div>
+
+<h3>images(file)</h3>
+
+<p>Load and decode image from file<br>
+从指定文件加载并解码图像</p>
+
+<h3>images(width, height)</h3>
+
+<p>Create a new transparent image<br>
+创建一个指定宽高的透明图像</p>
+
+<h3>images(buffer[, start[, end]])</h3>
+
+<p>Load and decode image from a buffer<br>
+从Buffer数据中解码图像</p>
+
+<h3>images(image[, x, y, width, height])</h3>
+
+<p>Copy from another image<br>
+从另一个图像中复制区域来创建图像</p>
+
+<h3>.fill(red, green, blue[, alpha])</h3>
+
+<p>eg:<code>images(200, 100).fill(0xff, 0x00, 0x00, 0.5)</code>
+Fill image with color<br>
+以指定颜色填充图像</p>
+
+<h3>.draw(image, x, y)</h3>
+
+<p>Draw <em>image</em> on the current image position( <em>x</em> , <em>y</em> )<br>
+在当前图像( <em>x</em> , <em>y</em> )上绘制 <em>image</em> 图像</p>
+
+<h3>.encode(type[, config])</h3>
+
+<p>eg:<code>images("input.png").encode("jpg", {operation:50})</code>
+Encode image to buffer, <em>config</em> is image setting.<br>
+以指定格式编码当前图像到Buffer，config为图片设置，目前支持设置JPG图像质量<br>
+Return buffer<br>
+返回填充好的Buffer<br><strong>Note:The operation will cut off the chain</strong><br><strong>注意:该操作将会切断调用链</strong><br>
+See:.save(file[, type[, config]])
+参考:.save(file[, type[, config]])</p>
+
+<h3>.save(file[, type[, config]])</h3>
+
+<p>eg:<code>images("input.png").encode("output.jpg", {operation:50})</code>
+Encoding and save the current image to a <em>file</em>, if the <em>type</em> is not specified, <em>type</em> well be automatically determined according to the <em>file</em>, <em>config</em> is image setting. eg: <code>{ operation:50 }</code><br>
+编码并保存当前图像到 <em>file</em> ,如果type未指定,则根据 <em>file</em> 自动判断文件类型，config为图片设置，目前支持设置JPG图像质量</p>
+
+<h3>.size([width[, height]])</h3>
+
+<p>Get size of the image or set the size of the image,if the height is not specified, then scaling based on the current width and height<br>
+获取或者设置图像宽高，如果height未指定，则根据当前宽高等比缩放</p>
+
+<h3>.width([width])</h3>
+
+<p>Get width for the image or set width of the image<br>
+获取或设置图像宽度</p>
+
+<h3>.height([height])</h3>
+
+<p>Get height for the image or set height of the image<br>
+获取或设置图像高度</p>
+
+<h3>images.setLimit(width, height)</h3>
+
+<p>Set the limit size of each image<br>
+设置库处理图片的大小限制,设置后对所有新的操作生效(如果超限则抛出异常)。</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Node-images maintained by <a href="https://github.com/zhangyuanwei">zhangyuanwei</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
