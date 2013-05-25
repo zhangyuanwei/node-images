@@ -91,7 +91,7 @@ DECODER_FN(Png){ // {{{
 	int bit_depth, color_type, interlace_type;
 
 	if(input->length < PNG_BYTES_TO_CHECK) return FAIL;
-	if(png_sig_cmp((png_const_bytep) input->data, 0, PNG_BYTES_TO_CHECK)) return FAIL;
+	if(png_sig_cmp(input->data, 0, PNG_BYTES_TO_CHECK)) return FAIL;
 	if((png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)) == NULL) return FAIL;
 
 	if((info_ptr = png_create_info_struct(png_ptr)) == NULL){
