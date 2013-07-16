@@ -1,28 +1,30 @@
 {
-    "name": "node-images",
-    "version": "1.1.1",
-    "description": "Cross-platform image decoder(png/jpeg/gif) and encoder(png/jpeg) for Node.js",
-    "main": "index.js",
-    "scripts": {
-        "test": "node test.js",
-        "install": "node install.js"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/xiangshouding/node-images.git"
-    },
-    "keywords": [
-        "image",
-        "decoder",
-        "encoder",
-        "png",
-        "jpeg",
-        "gif",
-        "cross-platform",
-        "images"],
-    "author": "ZhangYuanwei <zhangyuanwei1988@gmail.com>, fansekey<fansekey@gmail.com>",
-    "license": "BSD",
-    "gypfile": true,
-    "readmeFilename": "README.md",
-    "gitHead": "7c1bfcdf4dcdd08cf3e020ce853e8f3ad9907a35"
+  "name": "node-images",
+  "version": "1.1.1",
+  "description": "Cross-platform image decoder(png/jpeg/gif) and encoder(png/jpeg) for Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js",
+    "install": "node install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xiangshouding/node-images.git"
+  },
+  "keywords": [
+    "image",
+    "decoder",
+    "encoder",
+    "png",
+    "jpeg",
+    "gif",
+    "cross-platform",
+    "images"
+  ],
+  "author": "fansekey <fansekey@gmail.com>",
+  "license": "MIT",
+  "gypfile": true,
+  "bugs": {
+    "url": "https://github.com/xiangshouding/node-images/issues"
+  }
 }
