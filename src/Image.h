@@ -68,14 +68,14 @@ typedef struct PixelArray{
 
 typedef struct {
 	uint8_t *data;
-	size_t length;
-	size_t position;
+	unsigned long length;
+	unsigned long position;
 	//ImageType type;
 } ImageData;
 
 typedef struct {
 	char *data;
-	size_t length;
+	unsigned long length;
 } ImageConfig;
 
 typedef ImageState (* ImageEncoder)(PixelArray *input, ImageData *output, ImageConfig *config);

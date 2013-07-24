@@ -1,6 +1,6 @@
 var fs = require("fs"),
     path = require("path"),
-    name = "images.node",
+    name = "node_images.node",
     tryList, i, count, file;
 
 tryList = [
