@@ -2,11 +2,25 @@ var fs = require("fs"),
     path = require("path"),
     name = "node_images.node",
     tryList, i, count, file;
-
-tryList = [
-	path.join(__dirname, "build", "Release", name), // build dir
-	path.join(__dirname, "lib", process.platform, name) // prebuild lib
+/**
+ *  0.8.0-0.8.25 : 0.8.0
+ *  0.9.9-0.10.13 : 0.9.9
+ *  0.9.2-0.9.8: 0.9.2
+ *  0.9.1-0.9.1: 0.9.1
+ *  0.9.0-0.9.0: 0.9.0
+ */
+vars = [
+    '0.8.0',
+    '0.9.9'
 ];
+tryList = [
+    path.join(__dirname, "build", "Release", name) // build dir
+];
+
+for (i = 0, count = vars.length; i < count; i++) {
+    tryList.push(path.join(__dirname, "lib", process.platform, vars[i], name));
+}
+
 
 count = tryList.length;
 for (i = 0; i < count; i++) {
