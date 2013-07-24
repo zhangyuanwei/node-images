@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node test.js",
-    "install": "node install.js"
+    "install": "(node ./install.js 2> builderror.log) || (exit 0)"
   },
   "repository": {
     "type": "git",
