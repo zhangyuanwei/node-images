@@ -18,15 +18,15 @@
 #define STRINGFY(n) #n
 #define MERGE_FILE_LINE(file, line, msg) ( file ":" STRINGFY(line) " " msg)
 #define FILE_LINE(msg) MERGE_FILE_LINE(__FILE__, __LINE__, msg)
-#define ERROR(type, msg) Exception::type##Error(String::New(msg))
+#define ERRORR(type, msg) Exception::type##Error(String::New(msg))
 #define THROW(err) ThrowException(err)
 
 #define SET_ERROR(msg) (Image::setError(FILE_LINE(msg)))
 #define GET_ERROR() (Image::getError())
-#define THROW_ERROR(msg) THROW(ERROR(,FILE_LINE(msg)))
+#define THROW_ERROR(msg) THROW(ERRORR(,FILE_LINE(msg)))
 #define THROW_GET_ERROR() THROW(GET_ERROR())
 
-#define THROW_TYPE_ERROR(msg) THROW(ERROR(Type, FILE_LINE(msg)))
+#define THROW_TYPE_ERROR(msg) THROW(ERRORR(Type, FILE_LINE(msg)))
 #define THROW_INVALID_ARGUMENTS_ERROR(msg) THROW_TYPE_ERROR("Invalid arguments" msg)
 
 #define DEFAULT_WIDTH_LIMIT  10240 // default limit 10000x10000
@@ -43,14 +43,15 @@ const char *Image::error = NULL;
 void Image::Initialize(Handle<Object> target){ // {{{
 	HandleScope scope;
 
-	regAllCodecs();
-
 	//survival = 0;
 
 	// Constructor
-	constructor = Persistent<FunctionTemplate>::New(FunctionTemplate::New(Image::New));
+	Local<FunctionTemplate> tpl = FunctionTemplate::New(New);
+	constructor = Persistent<FunctionTemplate>::New(tpl);
 	constructor->InstanceTemplate()->SetInternalFieldCount(1);
 	constructor->SetClassName(String::NewSymbol("Image"));
+
+	regAllCodecs();
 
 	// Prototype
 	Local<ObjectTemplate> proto = constructor->PrototypeTemplate();
@@ -172,7 +173,7 @@ Handle<Value> Image::FillColor(const Arguments &args){ // {{{
 	if(!args[0]->IsNumber()
 	|| !args[1]->IsNumber()
 	|| !args[2]->IsNumber())
-		return THROW_INVALID_ARGUMENTS_ERROR();
+		return THROW_INVALID_ARGUMENTS_ERROR("");
 
 	cp = &color;
 	cp->R = args[0]->Uint32Value();
@@ -219,7 +220,7 @@ Handle<Value> Image::LoadFromBuffer(const Arguments &args){ // {{{
 	if(args[2]->IsNumber()){
 		end = args[2]->Uint32Value();
 		if(end < start || end > length){
-			return THROW_INVALID_ARGUMENTS_ERROR();
+			return THROW_INVALID_ARGUMENTS_ERROR("");
 		}
 	}
 
@@ -248,7 +249,7 @@ Handle<Value> Image::CopyFromImage(const Arguments &args){ // {{{
 	Local<Object> obj = args[0]->ToObject();
 
 	if(!Image::constructor->HasInstance(obj))
-		return THROW_INVALID_ARGUMENTS_ERROR();
+		return THROW_INVALID_ARGUMENTS_ERROR("");
 
 	src = ObjectWrap::Unwrap<Image>(obj);
 	dst = ObjectWrap::Unwrap<Image>(args.This());
@@ -287,7 +288,7 @@ Handle<Value> Image::DrawImage(const Arguments &args) { // {{{
 	if(!Image::constructor->HasInstance(obj)
 	|| !args[1]->IsNumber() // x
 	|| !args[2]->IsNumber()) // y
-		return THROW_INVALID_ARGUMENTS_ERROR();
+		return THROW_INVALID_ARGUMENTS_ERROR("");
 
 	src = ObjectWrap::Unwrap<Image>(obj);
 	dst = ObjectWrap::Unwrap<Image>(args.This());
@@ -315,7 +316,7 @@ Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
 	int length;
 
 	if(!args[0]->IsNumber())
-		return THROW_INVALID_ARGUMENTS_ERROR();
+		return THROW_INVALID_ARGUMENTS_ERROR("");
 	type = (ImageType) args[0]->Uint32Value();
 
 	config = NULL;
@@ -681,11 +682,11 @@ void PixelArray::DetectTransparent(){ // {{{
 	type = opaque ? SOLID : EMPTY;
 } // }}}
 
-extern "C" {
+
 	void NODE_MODULE_EXPORT initialize (Handle<Object> target) { // {{{
 		Image::Initialize(target);
 	} // }}}
-}
 
-NODE_MODULE(images, initialize);
+
+NODE_MODULE(node_images, initialize);
 // vim600: sw=4 ts=4 fdm=marker syn=cpp
