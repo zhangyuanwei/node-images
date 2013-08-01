@@ -47,10 +47,9 @@
                     ['OS=="win"', {
                         'libraries': [
 							'-l<(THIRD_PATH)/libjpeg-turbo/lib/jpeg-static.lib',
-                            #'-l<(THIRD_PATH)/jpeg/Release/jpeg.lib',
 						],
                         'include_dirs': [
-							'C:\libjpeg-turbo\include',
+							'<(THIRD_PATH)/libjpeg-turbo/include',
 						]
                     }, {
                         'libraries': ['-ljpeg']

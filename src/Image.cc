@@ -42,7 +42,7 @@ const char *Image::error = NULL;
 
 void Image::Initialize(Handle<Object> target){ // {{{
 	HandleScope scope;
-
+	regAllCodecs();
 	//survival = 0;
 
 	// Constructor
@@ -50,8 +50,6 @@ void Image::Initialize(Handle<Object> target){ // {{{
 	constructor = Persistent<FunctionTemplate>::New(tpl);
 	constructor->InstanceTemplate()->SetInternalFieldCount(1);
 	constructor->SetClassName(String::NewSymbol("Image"));
-
-	regAllCodecs();
 
 	// Prototype
 	Local<ObjectTemplate> proto = constructor->PrototypeTemplate();
@@ -683,9 +681,11 @@ void PixelArray::DetectTransparent(){ // {{{
 } // }}}
 
 
+extern "C" {
 	void NODE_MODULE_EXPORT initialize (Handle<Object> target) { // {{{
 		Image::Initialize(target);
 	} // }}}
+}
 
 
 NODE_MODULE(node_images, initialize);
