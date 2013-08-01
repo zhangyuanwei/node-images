@@ -18,7 +18,7 @@ tryList = [
 ];
 
 for (i = 0, count = vars.length; i < count; i++) {
-    tryList.push(path.join(__dirname, "lib", process.platform, vars[i], name));
+    tryList.push(path.join(__dirname, "lib", process.platform, process.arch, vars[i], name));
 }
 
 
