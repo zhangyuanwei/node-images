@@ -23,7 +23,7 @@ has_lib() {
   return 1
 }
 
-has_lib $1
+has_lib $1 > /dev/null
 if test $? -eq 0; then
   echo true
 else
