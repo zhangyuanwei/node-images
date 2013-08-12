@@ -18,34 +18,40 @@ var get_special_addon = function() {
     var tmp;
     for (var vers in map) {
         if (map.hasOwnProperty(vers)) {
-            var head, tail, version;
+            var head, tail, version, i, sp = 3;
             tmp = vers.split('-');
-            head = tmp[0].split('.', 3);
+            head = tmp[0].split('.', sp).map(parseFloat);
             if (tmp[1] == 'latest') {
                 tail = null;
             } else {
-                tail = tmp[1].split('.', 3);
+                tail = tmp[1].split('.', sp).map(parseFloat);
             }
-            version = process.version.split('.', 3);
+            version = process.versions.node.split('.', sp).map(parseFloat);
             if (tail) {
-                if (head[0] <= version[0] && version[0] <= tail[0]) {
-                    return map[vers];
-                }
-                if (head[1] <= version[1] && version[1] <= tail[1]) {
-                    return map[vers];
-                }
-                if (head[2] <= version[2] && version[2] <= tail[2]){
-                    return map[vers];
+                for (i = 0; i < sp; i++) {
+                    if (head[i] == version[i] && version[i] == tail[i]) {
+                        if (i == sp - 1) {
+                            return map[vers];
+                        }
+                        continue;
+                    } else if (head[i] <= version[i] && version[i] <= tail[i]) {
+                        return map[vers];
+                    } else {
+                        break;
+                    }
                 }
             } else {
-                if (head[0] <= version[0]) {
-                    return map[vers];
-                }
-                if (head[1] <= version[1]) {
-                    return map[vers];
-                }
-                if (head[2] <= version[2]) {
-                    return map[vers];
+                for (i = 0; i < sp; i++) {
+                    if (head[i] == version[i]) {
+                        if (i == sp - 1) {
+                            return map[vers];
+                        }
+                        continue;
+                    } else if (head[i] < version[i]) {
+                        return map[vers];
+                    } else {
+                        break;
+                    }
                 }
             }
         }
@@ -58,6 +64,7 @@ tryList = [
 ];
 
 var wish = get_special_addon();
+
 if (wish) {
     tryList.push(path.join(__dirname, "lib", process.platform, process.arch, wish, name));
 }
