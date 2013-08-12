@@ -29,6 +29,12 @@ images("input.jpg")                     //Load image from file
 ## Installation 安装
 	$ npm install images
 
+You will also need to install:
+
++ giflib 4.x.x
++ libpng 1.5.x
++ jpeg-turbo 1.x.x
+
 ## API 接口
 
 node-images provide jQuery-like Chaining API,You can start the chain like this:  
