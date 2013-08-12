@@ -28,23 +28,23 @@ var get_special_addon = function() {
             }
             version = process.version.split('.', 3);
             if (tail) {
-                if (head[0] < version[0] && version[0] < tail[0]) {
+                if (head[0] <= version[0] && version[0] <= tail[0]) {
                     return map[vers];
                 }
-                if (head[1] < version[1] && version[1] < tail[1]) {
+                if (head[1] <= version[1] && version[1] <= tail[1]) {
                     return map[vers];
                 }
-                if (head[2] > version[2] && version[2] < tail[2]){
+                if (head[2] <= version[2] && version[2] <= tail[2]){
                     return map[vers];
                 }
             } else {
-                if (head[0] < version[0]) {
+                if (head[0] <= version[0]) {
                     return map[vers];
                 }
-                if (head[1] < version[1]) {
+                if (head[1] <= version[1]) {
                     return map[vers];
                 }
-                if (head[2] < version[2]) {
+                if (head[2] <= version[2]) {
                     return map[vers];
                 }
             }
