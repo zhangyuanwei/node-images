@@ -36,7 +36,7 @@
                             '<(THIRD_PATH)/libpng',
                             '<(THIRD_PATH)/zlib']
                     }, {
-                        'libraries': ['-lpng']
+                        'libraries': ['-lpng', '-lz', '-lm']
                     }]
                 ]
             }],
