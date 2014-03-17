@@ -4,6 +4,7 @@
 // Copyright (c) 2013 ZhangYuanwei <zhangyuanwei1988@gmail.com>
 
 #include "Image.h"
+#include "Resize.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,7 @@ void Image::Initialize(Handle<Object> target){ // {{{
 
     // Prototype
     Local<ObjectTemplate> proto = constructor->PrototypeTemplate();
+    NODE_SET_PROTOTYPE_METHOD(constructor, "resize", Resize);
     NODE_SET_PROTOTYPE_METHOD(constructor, "fillColor", FillColor);
     NODE_SET_PROTOTYPE_METHOD(constructor, "loadFromBuffer", LoadFromBuffer);
     NODE_SET_PROTOTYPE_METHOD(constructor, "copyFromImage", CopyFromImage);
@@ -156,6 +158,33 @@ void Image::SetHeight(Local<String> prop, Local<Value> value, const AccessorInfo
         img->pixels->SetHeight(value->Uint32Value());
     }
 } // }}}
+
+
+/**
+ * Scale image with bicubic.
+ * @since 1.5.5+
+ */
+Handle<Value>Image::Resize(const Arguments &args) {
+    HandleScope scope;
+    char *filter = NULL;
+
+    if( (!args[0]->IsNull() && !args[0]->IsUndefined () && !args[0]->IsNumber()) ||
+        (!args[1]->IsNull() && !args[1]->IsUndefined () && !args[1]->IsNumber()) )
+        return THROW_INVALID_ARGUMENTS_ERROR("Arguments error");
+
+    if ( args[2]->IsString() ) {
+        String::Utf8Value cstr(args[2]);
+        filter = new char[strlen(*cstr)+1];
+        strcpy(filter, *cstr);
+    }
+
+    Image *img = ObjectWrap::Unwrap<Image>(args.This());
+    img->pixels->Resize(args[0]->ToNumber()->Value(), args[1]->ToNumber()->Value(), filter);
+
+    return scope.Close(Undefined());
+}
+
+
 
 Handle<Value> Image::GetTransparent(Local<String> prop, const AccessorInfo &info){ // {{{
     HandleScope scope;
@@ -647,6 +676,46 @@ ImageState PixelArray::SetHeight(size_t h){ // {{{
     }
     return SUCCESS;
 } // }}}
+
+ImageState PixelArray::Resize(size_t w, size_t h, const char *filter){
+    PixelArray newArray, *pixels;
+
+    if ( (int)w < 1 ) {
+        w = width * h / height;
+    }
+
+    if ( (int)h < 1 ) {
+        h = height * w / width;
+    }
+
+    if(data != NULL){
+        if(w > Image::maxWidth){
+            return SET_ERROR("Beyond the width limit.");
+        }
+
+        if(h > Image::maxHeight){
+            return SET_ERROR("Beyond the height limit.");
+        }
+
+        if(w == width && h == height){
+            return SUCCESS;
+        }
+
+        pixels = &newArray;
+        if(pixels->Malloc(w, h) != SUCCESS){
+            return FAIL;
+        }
+        pixels->type = type;
+
+        resize( this, pixels, filter );
+
+        Free();
+        *this = *pixels;
+
+        // printf( "%d, %d, %d\n", this->data[122][267].R, this->data[122][267].G, this->data[122][267].B);
+    }
+    return SUCCESS;
+}
 
 void PixelArray::DetectTransparent(){ // {{{
     size_t x, y;

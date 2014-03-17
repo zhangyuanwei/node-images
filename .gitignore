@@ -1,4 +1,6 @@
 lib-cov
+/test/output*
+.DS_Store
 *.seed
 *.log
 *.csv

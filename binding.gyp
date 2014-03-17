@@ -21,7 +21,7 @@
     ],
     'targets': [{
         'target_name': 'node_images',
-        'sources': ['src/Image.cc'],
+        'sources': ['src/Image.cc', 'src/Resize.cc', 'src/resampler.cpp'],
         'conditions': [
             ['OS=="win"', {}, {}],
             ['with_png=="true"', {
