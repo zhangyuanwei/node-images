@@ -62,6 +62,7 @@ typedef struct PixelArray{
 	// Transform
 	ImageState SetWidth(size_t w);
 	ImageState SetHeight(size_t h);
+	ImageState Resize(size_t w, size_t h, const char *filter);
 
 	void DetectTransparent();
 } PixelArray;
@@ -96,6 +97,12 @@ typedef struct ImageCodec{
 
 #ifdef HAVE_PNG
 IMAGE_CODEC(Png);
+// DECODER_FN(Png);ENCODER_FN(Png)
+// ImageState DECODER(Png)(PixelArray *output, ImageData *input); ...
+// ImageState decodePng(PixelArray *output, ImageData *input);
+// ImageState encodePng(PixelArray *input, ImageData *output, ImageConfig *config)
+
+
 #endif
 #ifdef HAVE_JPEG
 IMAGE_CODEC(Jpeg);
@@ -139,6 +146,7 @@ class Image: public node::ObjectWrap {
 		static void SetHeight(Local<String> prop, Local<Value> value, const AccessorInfo &info);
 		static Handle<Value> GetTransparent(Local<String> prop, const AccessorInfo &info);
 
+		static Handle<Value> Resize(const Arguments &args);
 		static Handle<Value> FillColor(const Arguments &args);
 		static Handle<Value> LoadFromBuffer(const Arguments &args);
 		static Handle<Value> CopyFromImage(const Arguments &args);
@@ -146,7 +154,7 @@ class Image: public node::ObjectWrap {
 		static Handle<Value> DrawImage(const Arguments &args);
 		static Handle<Value> ToBuffer(const Arguments &args);
 
-	private:	
+	private:
 		static const char *error;
 		static int errno;
 
@@ -170,7 +178,7 @@ class Image: public node::ObjectWrap {
 			regCodec(DECODER(Png), ENCODER(Png), TYPE_PNG);
 #endif
 		}
-		
+
 		PixelArray *pixels;
 
 		Image();
