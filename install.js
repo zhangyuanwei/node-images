@@ -145,7 +145,7 @@ function download() {
                     fs.writeSync(outFile, data, 0, data.length, null);
                     count += data.length;
 
-                    if ( (count - notifiedCount) > 1024 * 1024 ) {
+                    if ( (count - notifiedCount) > 512 * 1024 ) {
                       console.log('Received ' + Math.floor( count / 1024 ) + 'K...');
                       notifiedCount = count;
                     }
