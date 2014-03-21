@@ -757,5 +757,5 @@ extern "C" {
 }
 
 
-NODE_MODULE(node_images, initialize);
+NODE_MODULE(binding, initialize);
 // vim600: sw=4 ts=4 fdm=marker syn=cpp
