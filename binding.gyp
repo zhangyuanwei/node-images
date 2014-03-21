@@ -20,7 +20,7 @@
         }]
     ],
     'targets': [{
-        'target_name': 'node_images',
+        'target_name': 'binding',
         'sources': ['src/Image.cc', 'src/Resize.cc', 'src/resampler.cpp'],
         'conditions': [
             ['OS=="win"', {}, {}],
