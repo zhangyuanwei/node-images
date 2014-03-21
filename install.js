@@ -75,11 +75,13 @@ function download() {
             candidates, version, modPath, candidate;
 
         version = process.versions.node;
+
         try {
             candidates = map[ process.platform ][ process.arch ];
         } catch ( e ) {
             return done( true, '' );
         }
+
 
         function versionCompare(left, right) {
             if (typeof left + typeof right != 'stringstring')
