@@ -1,4 +1,5 @@
 lib-cov
+/node_modules
 /test/output*
 .DS_Store
 *.seed
