@@ -26,5 +26,8 @@
   "gypfile": true,
   "bugs": {
     "url": "https://github.com/xiangshouding/node-images/issues"
+  },
+  "dependencies": {
+    "step": "0.0.5"
   }
 }
