@@ -5,7 +5,7 @@ Cross-platform image decoder(png/jpeg/gif) and encoder(png/jpeg) for Node.js
 Node.js轻量级跨平台图像编解码库
 
 ``` javascript
-var images = require("images");
+var images = require("node-images");
 
 images("input.jpg")                     //Load image from file 
                                         //加载图像文件
@@ -27,7 +27,14 @@ images("input.jpg")                     //Load image from file
 * 方便用：jQuery风格的API，简单可依赖。
 
 ## Installation 安装
-	$ npm install images
+	$ npm install node-images
+
+You will also need to install:
+
++ giflib 4.x.x
++ libpng 1.5.x
++ jpeg-turbo 1.x.x
+
 
 You will also need to install:
 

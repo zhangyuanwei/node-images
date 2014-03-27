@@ -2,7 +2,7 @@
     'conditions': [
         ['OS=="win"', {
             'variables': {
-                'THIRD_PATH%': 'E:/node-images/third',
+                'THIRD_PATH%': 'D:/dev/node/node-images/third',
                 'with_png%': 'true',
                 'with_jpeg%': 'true',
                 'with_gif%': 'true',
@@ -20,8 +20,8 @@
         }]
     ],
     'targets': [{
-        'target_name': 'images',
-        'sources': ['src/Image.cc'],
+        'target_name': 'binding',
+        'sources': ['src/Image.cc', 'src/Resize.cc', 'src/resampler.cpp'],
         'conditions': [
             ['OS=="win"', {}, {}],
             ['with_png=="true"', {
@@ -30,13 +30,13 @@
                 'conditions': [
                     ['OS=="win"', {
                         'libraries': [
-                            '-l<(THIRD_PATH)/libpng/projects/visualc71/Win32_LIB_Release/libpng.lib',
-                            '-l<(THIRD_PATH)/libpng/projects/visualc71/Win32_LIB_Release/Zlib/zlib.lib'],
+                            '-l<(THIRD_PATH)/libpng/projects/vstudio/ReleaseLibrary/libpng15.lib',
+                            '-l<(THIRD_PATH)/libpng/projects/vstudio/ReleaseLibrary/zlib.lib'],
                         'include_dirs': [
                             '<(THIRD_PATH)/libpng',
                             '<(THIRD_PATH)/zlib']
                     }, {
-                        'libraries': ['-lpng']
+                        'libraries': ['-lpng', '-lz', '-lm']
                     }]
                 ]
             }],
@@ -46,13 +46,10 @@
                 'conditions': [
                     ['OS=="win"', {
                         'libraries': [
-							'-l<(THIRD_PATH)/libjpeg-turbo/build/Release/jpeg-static.lib',
-                            #'-l<(THIRD_PATH)/jpeg/Release/jpeg.lib',
+							'-l<(THIRD_PATH)/libjpeg-turbo/lib/jpeg-static.lib',
 						],
                         'include_dirs': [
-							'<(THIRD_PATH)/libjpeg-turbo',
-							'<(THIRD_PATH)/libjpeg-turbo/build',
-                            #'<(THIRD_PATH)/jpeg',
+							'<(THIRD_PATH)/libjpeg-turbo/include',
 						]
                     }, {
                         'libraries': ['-ljpeg']
@@ -64,7 +61,7 @@
                 'sources': ['src/Gif.cc'],
                 'conditions': [
                     ['OS=="win"', {
-                        'libraries': ['-l<(THIRD_PATH)/giflib/windows/giflib/Release/giflib.lib'],
+                        'libraries': ['-l<(THIRD_PATH)\giflib\windows\giflib\Release\giflib.lib'],
                         'include_dirs': [
                             '<(THIRD_PATH)/giflib/lib']
                     }, {

@@ -1,21 +1,23 @@
-lib-cov
-*.seed
-*.log
-*.csv
-*.dat
-*.out
-*.pid
-*.gz
-*.cmd
-tmp.*
+/.idea
+/.settings
+/.project
+/.gitignore
+/node_modules
+/test
+/.tmp
+/third
+/demo
+/build
+/bindings
 
-dev
-Makefile
-build
-third
+/lib
 
-pids
-logs
-results
 
-npm-debug.log
+.DS_Store
+
+*.db
+*.bak
+*.tmp
+~*
+
+upload.py

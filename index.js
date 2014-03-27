@@ -51,6 +51,12 @@ prototype = {
         }
         fs.writeFileSync(file, this.encode(type || path.extname(file), config));
     },
+
+    resize: function( width, height, filter ){
+        this._handle.resize( width, height, filter );
+        return this;
+    },
+
     size: function(width, height) {
         var size;
         if (width === undefined) return {
