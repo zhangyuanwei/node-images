@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "giflib", "giflib.vcxproj", "{9B8C1E4A-D093-4E9E-BA59-233A0BBD764F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9B8C1E4A-D093-4E9E-BA59-233A0BBD764F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9B8C1E4A-D093-4E9E-BA59-233A0BBD764F}.Debug|Win32.Build.0 = Debug|Win32
+		{9B8C1E4A-D093-4E9E-BA59-233A0BBD764F}.Release|Win32.ActiveCfg = Release|Win32
+		{9B8C1E4A-D093-4E9E-BA59-233A0BBD764F}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
