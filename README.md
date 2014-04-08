@@ -35,13 +35,6 @@ You will also need to install:
 + libpng 1.5.x
 + jpeg-turbo 1.x.x
 
-
-You will also need to install:
-
-+ giflib 4.x.x
-+ libpng 1.5.x
-+ jpeg-turbo 1.x.x
-
 ## API 接口
 
 node-images provide jQuery-like Chaining API,You can start the chain like this:  
