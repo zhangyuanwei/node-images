@@ -60,8 +60,9 @@ function download() {
         done = this,
         githubUser, githubRepos, downloadUrl;
 
-    // https://github.com/2betop/fis-sass.git
-    if ( /([^\/]+?)\/([^\.\/]+?)\.git$/i.test( pkg.repository.url ) ) {
+    if ( pkg.bindingsCDN ) {
+        downloadUrl = pkg.bindingsCDN;
+    } else if ( /([^\/]+?)\/([^\.\/]+?)\.git$/i.test( pkg.repository.url ) ) {
         githubUser = RegExp.$1;
         githubRepos = RegExp.$2;
         downloadUrl = 'https://raw.github.com/' + githubUser + '/' +
