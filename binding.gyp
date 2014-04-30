@@ -11,9 +11,9 @@
             }
         }, {
             'variables': {
-                'with_png%': '<!(./util/has_lib.sh png)',
-                'with_jpeg%': '<!(./util/has_lib.sh jpeg)',
-                'with_gif%': '<!(./util/has_lib.sh gif)',
+                'with_png%': 'true',
+                'with_jpeg%': 'true',
+                'with_gif%': 'true',
                 'with_bmp%': 'false',
                 'with_raw%': 'true',
             }
