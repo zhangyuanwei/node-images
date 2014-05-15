@@ -113,4 +113,16 @@ Get height for the image or set height of the image
 
 ### images.setLimit(width, height)
 Set the limit size of each image  
-设置库处理图片的大小限制,设置后对所有新的操作生效(如果超限则抛出异常)。
+设置库处理图片的大小限制,设置后对所有新的操作生效(如果超限则抛出异常)
+
+### images.setGCThreshold(value)
+Set the garbage collection threshold  
+设置图像处理库自动gc的阈值(当*新增*内存使用超过该阈值时，执行垃圾回收)
+
+### images.getUsedMemory()
+Get used memory (in bytes)  
+得到图像处理库占用的内存大小(单位为字节)
+
+### images.gc()
+Forced call garbage collection  
+强制调用V8的垃圾回收机制

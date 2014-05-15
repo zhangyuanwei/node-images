@@ -135,6 +135,11 @@ class Image: public node::ObjectWrap {
 		static void SetMaxWidth(Local<String> prop, Local<Value> value, const AccessorInfo &info);
 		static Handle<Value> GetMaxHeight(Local<String> prop, const AccessorInfo &info);
 		static void SetMaxHeight(Local<String> prop, Local<Value> value, const AccessorInfo &info);
+        
+        // Memory
+        static size_t usedMemory;
+        static Handle<Value> GetUsedMemory(Local<String> prop, const AccessorInfo &info);
+        static Handle<Value> GC(const Arguments &args);
 
 		// Image constructor
 		static Handle<Value> New(const Arguments &args);

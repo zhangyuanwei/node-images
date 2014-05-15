@@ -6,10 +6,18 @@ var USE_OLD_API = false,
     slice = Array.prototype.slice,
     FILE_TYPE_MAP,
     CONFIG_GENERATOR,
-    prototype;
+    prototype,
+    nextGCThreshold = 0,
+    gcThreshold = 0;
 
 function WrappedImage(width, height) {
     if (!(this instanceof WrappedImage)) return new WrappedImage(width, height);
+    if (gcThreshold && nextGCThreshold) {
+        if (images.getUsedMemory() > nextGCThreshold) {
+            images.gc();
+            nextGCThreshold = images.getUsedMemory() + gcThreshold;
+        }
+    }
     this._handle = new _Image(width, height);
 }
 
@@ -52,8 +60,8 @@ prototype = {
         fs.writeFileSync(file, this.encode(type || path.extname(file), config));
     },
 
-    resize: function( width, height, filter ){
-        this._handle.resize( width, height, filter );
+    resize: function(width, height, filter) {
+        this._handle.resize(width, height, filter);
         return this;
     },
 
@@ -167,6 +175,19 @@ images.setLimit = function(maxWidth, maxHeight) {
     _images.maxHeight = maxHeight;
     _images.maxWidth = maxWidth;
     return images;
+};
+
+images.setGCThreshold = function(value) {
+    gcThreshold = value;
+    nextGCThreshold = value;
+};
+
+images.getUsedMemory = function() {
+    return _images.usedMemory;
+};
+
+images.gc = function() {
+    return _images.gc();
 };
 
 module.exports = USE_OLD_API ? _images : images;

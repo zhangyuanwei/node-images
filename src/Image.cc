@@ -73,6 +73,8 @@ void Image::Initialize(Handle<Object> target){ // {{{
 
     target->SetAccessor(String::NewSymbol("maxWidth"), GetMaxWidth, SetMaxWidth);
     target->SetAccessor(String::NewSymbol("maxHeight"), GetMaxHeight, SetMaxHeight);
+    target->SetAccessor(String::NewSymbol("usedMemory"), GetUsedMemory);
+    NODE_SET_METHOD(target, "gc", GC);
 
     target->Set(String::NewSymbol("Image"), constructor->GetFunction());
 } //}}}
@@ -110,6 +112,20 @@ Handle<Value> Image::GetMaxHeight(Local<String> prop, const AccessorInfo &info){
 void Image::SetMaxHeight(Local<String> prop, Local<Value> value, const AccessorInfo &info){ // {{{
     if(value->IsNumber())
         maxHeight = value->Uint32Value();
+} // }}}
+        
+// Memory
+size_t Image::usedMemory = 0;
+
+Handle<Value> Image::GetUsedMemory(Local<String> prop, const AccessorInfo &info){ // {{{
+    HandleScope scope;
+    return scope.Close(Number::New(usedMemory));
+} // }}}
+
+Handle<Value> Image::GC(const Arguments &args){ // {{{
+    HandleScope scope;
+    V8::LowMemoryNotification();
+    return scope.Close(Undefined());
 } // }}}
 
 Handle<Value> Image::New(const Arguments &args){ // {{{
@@ -402,11 +418,14 @@ void Image::regCodec(ImageDecoder decoder, ImageEncoder encoder, ImageType type)
 } // }}}
 
 Image::Image(){ // {{{
+    size_t size;
     pixels = (PixelArray *) malloc(sizeof(PixelArray));
     pixels->width = pixels->height = 0;
     pixels->type = EMPTY;
     pixels->data = NULL;
-    V8::AdjustAmountOfExternalAllocatedMemory(sizeof(PixelArray) + sizeof(Image));
+    size = sizeof(PixelArray) + sizeof(Image);
+    V8::AdjustAmountOfExternalAllocatedMemory(size);
+    usedMemory += size;
     //survival++;
 } // }}}
 
@@ -416,6 +435,7 @@ Image::~Image(){ // {{{
     pixels->Free();
     free(pixels);
     V8::AdjustAmountOfExternalAllocatedMemory(-size);
+    usedMemory -= size;
     //survival--;
     //printf("survival:%d\n", survival);
 } // }}}
@@ -458,7 +478,9 @@ ImageState PixelArray::Malloc(size_t w, size_t h){ // {{{
             data[height] = line;
         }
     }
-    V8::AdjustAmountOfExternalAllocatedMemory(Size());
+    size = Size();
+    V8::AdjustAmountOfExternalAllocatedMemory(size);
+    Image::usedMemory += size;
     return SUCCESS;
 
 free:
@@ -474,7 +496,7 @@ fail:
 } // }}}
 
 void PixelArray::Free(){ // {{{
-    size_t h;
+    size_t h, size;
 
     if(data != NULL){
         h = height;
@@ -482,7 +504,9 @@ void PixelArray::Free(){ // {{{
             if(data[h] != NULL) free(data[h]);
         }
         free(data);
-        V8::AdjustAmountOfExternalAllocatedMemory(-Size());
+        size = Size();
+        V8::AdjustAmountOfExternalAllocatedMemory(-size);
+        Image::usedMemory -= size;
     }
 
     width = height = 0;
