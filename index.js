@@ -52,12 +52,12 @@ prototype = {
         }
         return this._handle.toBuffer(type, config);
     },
-    save: function(file, type, config) {
+    save: function(file, type, config, callback) {
         if (type && typeof(type) == "object") {
             config = type;
             type = undefined;
         }
-        fs.writeFileSync(file, this.encode(type || path.extname(file), config));
+        fs.writeFile(file, this.encode(type || path.extname(file), config), callback);
     },
 
     resize: function(width, height, filter) {
