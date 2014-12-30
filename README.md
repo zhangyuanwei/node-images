@@ -103,6 +103,10 @@ Encoding and save the current image to a *file*, if the *type* is not specified,
 Get size of the image or set the size of the image,if the height is not specified, then scaling based on the current width and height  
 获取或者设置图像宽高，如果height未指定，则根据当前宽高等比缩放
 
+### .resize(width[, height])
+Set the size of the image,if the height is not specified, then scaling based on the current width and height  
+设置图像宽高，如果height未指定，则根据当前宽高等比缩放, 默认采用 bicubic 算法。
+
 ### .width([width])
 Get width for the image or set width of the image  
 获取或设置图像宽度
