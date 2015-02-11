@@ -39,7 +39,9 @@
                             '<(THIRD_PATH)/libpng',
                             '<(THIRD_PATH)/zlib']
                     }, {
-                        'libraries': ['-lpng', '-lz', '-lm']
+                        'dependencies': [
+                            './gyp/gyp/libpng.gyp:libpng',
+                        ]
                     }]
                 ]
             }],
@@ -55,7 +57,9 @@
 							'<(THIRD_PATH)/libjpeg-turbo/include',
 						]
                     }, {
-                        'libraries': ['-ljpeg']
+                        'dependencies': [
+                            './gyp/gyp/libjpeg-turbo.gyp:libjpeg-turbo',
+                        ]
                     }]
                 ]
             }],
@@ -68,7 +72,9 @@
                         'include_dirs': [
                             '<(THIRD_PATH)/giflib/lib']
                     }, {
-                        'libraries': ['-lgif']
+                        'dependencies': [
+                            './gyp/gyp/giflib.gyp:giflib',
+                        ]
                     }]
                 ]
             }],
