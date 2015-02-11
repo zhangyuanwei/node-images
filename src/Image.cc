@@ -10,25 +10,22 @@
 #include <string.h>
 #include <errno.h>
 
-#include <node_buffer.h>
-
-
 //#define SET_ERROR_FILE_LINE(file, line, msg) Image::SetError( file #line msg)
 //#define SET_ERROR(msg) SET_ERROR_FILE_LINE(__FILE__, __LINE__, meg)
 
 #define STRINGFY(n) #n
 #define MERGE_FILE_LINE(file, line, msg) ( file ":" STRINGFY(line) " " msg)
 #define FILE_LINE(msg) MERGE_FILE_LINE(__FILE__, __LINE__, msg)
-#define ERRORR(type, msg) Exception::type##Error(String::New(msg))
-#define THROW(err) ThrowException(err)
+#define ERRORR(type, msg) (msg)
+#define THROW(err) NanThrowError(err)
 
 #define SET_ERROR(msg) (Image::setError(FILE_LINE(msg)))
 #define GET_ERROR() (Image::getError())
 #define THROW_ERROR(msg) THROW(ERRORR(,FILE_LINE(msg)))
 #define THROW_GET_ERROR() THROW(GET_ERROR())
 
-#define THROW_TYPE_ERROR(msg) THROW(ERRORR(Type, FILE_LINE(msg)))
-#define THROW_INVALID_ARGUMENTS_ERROR(msg) THROW_TYPE_ERROR("Invalid arguments" msg)
+#define THROW_TYPE_ERROR(msg) NanThrowTypeError(FILE_LINE(msg)))
+#define THROW_INVALID_ARGUMENTS_ERROR(msg) NanThrowTypeError("Invalid arguments" msg)
 
 #define DEFAULT_WIDTH_LIMIT  10240 // default limit 10000x10000
 #define DEFAULT_HEIGHT_LIMIT 10240 // default limit 10000x10000
@@ -41,42 +38,45 @@ size_t Image::maxWidth = DEFAULT_WIDTH_LIMIT;
 size_t Image::maxHeight = DEFAULT_HEIGHT_LIMIT;
 const char *Image::error = NULL;
 
-void Image::Initialize(Handle<Object> target){ // {{{
-    HandleScope scope;
+void Image::Initialize(Handle<Object> exports){ // {{{
+    NanScope();
+
     regAllCodecs();
     //survival = 0;
 
     // Constructor
-    Local<FunctionTemplate> tpl = FunctionTemplate::New(New);
-    constructor = Persistent<FunctionTemplate>::New(tpl);
-    constructor->InstanceTemplate()->SetInternalFieldCount(1);
-    constructor->SetClassName(String::NewSymbol("Image"));
+    Local<FunctionTemplate> tpl = NanNew<FunctionTemplate>(New);
+    //constructor = Persistent<FunctionTemplate>::New(tpl);
+    tpl->InstanceTemplate()->SetInternalFieldCount(1);
+    tpl->SetClassName(NanNew("Image"));
 
     // Prototype
-    Local<ObjectTemplate> proto = constructor->PrototypeTemplate();
-    NODE_SET_PROTOTYPE_METHOD(constructor, "resize", Resize);
-    NODE_SET_PROTOTYPE_METHOD(constructor, "fillColor", FillColor);
-    NODE_SET_PROTOTYPE_METHOD(constructor, "loadFromBuffer", LoadFromBuffer);
-    NODE_SET_PROTOTYPE_METHOD(constructor, "copyFromImage", CopyFromImage);
-    NODE_SET_PROTOTYPE_METHOD(constructor, "drawImage", DrawImage);
-    NODE_SET_PROTOTYPE_METHOD(constructor, "toBuffer", ToBuffer);
+    Local<ObjectTemplate> proto = tpl->PrototypeTemplate();
+    NODE_SET_PROTOTYPE_METHOD(tpl, "resize", Resize);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "fillColor", FillColor);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "loadFromBuffer", LoadFromBuffer);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "copyFromImage", CopyFromImage);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "drawImage", DrawImage);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "toBuffer", ToBuffer);
 
-    proto->SetAccessor(String::NewSymbol("width"), GetWidth, SetWidth);
-    proto->SetAccessor(String::NewSymbol("height"), GetHeight, SetHeight);
-    proto->SetAccessor(String::NewSymbol("transparent"), GetTransparent);
+    proto->SetAccessor(NanNew("width"), GetWidth, SetWidth);
+    proto->SetAccessor(NanNew("height"), GetHeight, SetHeight);
+    proto->SetAccessor(NanNew("transparent"), GetTransparent);
 
-    NODE_DEFINE_CONSTANT(target, TYPE_PNG);
-    NODE_DEFINE_CONSTANT(target, TYPE_JPEG);
-    NODE_DEFINE_CONSTANT(target, TYPE_GIF);
-    NODE_DEFINE_CONSTANT(target, TYPE_BMP);
-    NODE_DEFINE_CONSTANT(target, TYPE_RAW);
+    NODE_DEFINE_CONSTANT(exports, TYPE_PNG);
+    NODE_DEFINE_CONSTANT(exports, TYPE_JPEG);
+    NODE_DEFINE_CONSTANT(exports, TYPE_GIF);
+    NODE_DEFINE_CONSTANT(exports, TYPE_BMP);
+    NODE_DEFINE_CONSTANT(exports, TYPE_RAW);
 
-    target->SetAccessor(String::NewSymbol("maxWidth"), GetMaxWidth, SetMaxWidth);
-    target->SetAccessor(String::NewSymbol("maxHeight"), GetMaxHeight, SetMaxHeight);
-    target->SetAccessor(String::NewSymbol("usedMemory"), GetUsedMemory);
-    NODE_SET_METHOD(target, "gc", GC);
+    exports->SetAccessor(NanNew("maxWidth"), GetMaxWidth, SetMaxWidth);
+    exports->SetAccessor(NanNew("maxHeight"), GetMaxHeight, SetMaxHeight);
+    exports->SetAccessor(NanNew("usedMemory"), GetUsedMemory);
+    NODE_SET_METHOD(exports, "gc", GC);
 
-    target->Set(String::NewSymbol("Image"), constructor->GetFunction());
+    NanAssignPersistent(constructor, tpl);
+
+    exports->Set(NanNew("Image"), tpl->GetFunction());
 } //}}}
 
 ImageState Image::setError(const char * err){ // {{{
@@ -85,7 +85,7 @@ ImageState Image::setError(const char * err){ // {{{
 } // }}}
 
 Local<Value> Image::getError(){ // {{{
-    Local<Value> err = Exception::Error(String::New(error ? error : "Unknow Error"));
+    Local<Value> err = Exception::Error(NanNew(error ? error : "Unknow Error"));
     error = NULL;
     return err;
 } // }}}
@@ -94,22 +94,22 @@ bool Image::isError(){ // {{{
     return error != NULL;
 } // }}}
 
-Handle<Value> Image::GetMaxWidth(Local<String> prop, const AccessorInfo &info){ // {{{
-    HandleScope scope;
-    return scope.Close(Number::New(maxWidth));
+NAN_GETTER(Image::GetMaxWidth) { // {{{
+    NanScope();
+    NanReturnValue(NanNew<Number>(maxWidth));
 } // }}}
 
-void Image::SetMaxWidth(Local<String> prop, Local<Value> value, const AccessorInfo &info){ // {{{
+NAN_SETTER(Image::SetMaxWidth) { // {{{
     if(value->IsNumber())
         maxWidth = value->Uint32Value();
 } // }}}
 
-Handle<Value> Image::GetMaxHeight(Local<String> prop, const AccessorInfo &info){ // {{{
-    HandleScope scope;
-    return scope.Close(Number::New(maxHeight));
+NAN_GETTER(Image::GetMaxHeight) { // {{{
+    NanScope();
+    NanReturnValue(NanNew<Number>(maxHeight));
 } // }}}
 
-void Image::SetMaxHeight(Local<String> prop, Local<Value> value, const AccessorInfo &info){ // {{{
+NAN_SETTER(Image::SetMaxHeight) { // {{{
     if(value->IsNumber())
         maxHeight = value->Uint32Value();
 } // }}}
@@ -117,19 +117,21 @@ void Image::SetMaxHeight(Local<String> prop, Local<Value> value, const AccessorI
 // Memory
 size_t Image::usedMemory = 0;
 
-Handle<Value> Image::GetUsedMemory(Local<String> prop, const AccessorInfo &info){ // {{{
-    HandleScope scope;
-    return scope.Close(Number::New(usedMemory));
+NAN_GETTER(Image::GetUsedMemory) { // {{{
+    NanScope();
+    NanReturnValue(NanNew<Number>(usedMemory));
 } // }}}
 
-Handle<Value> Image::GC(const Arguments &args){ // {{{
-    HandleScope scope;
-    V8::LowMemoryNotification();
-    return scope.Close(Undefined());
+NAN_METHOD(Image::GC) { // {{{
+    NanScope();
+    //V8::LowMemoryNotification();
+    NanLowMemoryNotification();
+    NanReturnUndefined();
 } // }}}
 
-Handle<Value> Image::New(const Arguments &args){ // {{{
-    HandleScope scope;
+NAN_METHOD(Image::New) { // {{{
+    NanScope();
+
     Image *img;
 
     size_t width, height;
@@ -146,31 +148,34 @@ Handle<Value> Image::New(const Arguments &args){ // {{{
     }
 
     img->Wrap(args.This());
-    return args.This();
+
+    NanReturnThis();
 } // }}}
 
-Handle<Value> Image::GetWidth(Local<String> prop, const AccessorInfo &info){ // {{{
-    HandleScope scope;
-    Image *img = ObjectWrap::Unwrap<Image>(info.This());
-    return scope.Close(Number::New(img->pixels->width));
+NAN_GETTER(Image::GetWidth) { // {{{
+    NanScope();
+
+    Image *img = ObjectWrap::Unwrap<Image>(args.This());
+    NanReturnValue(NanNew<Number>(img->pixels->width));
 } // }}}
 
-void Image::SetWidth(Local<String> prop, Local<Value> value, const AccessorInfo &info){ // {{{
+NAN_SETTER(Image::SetWidth) { // {{{
     if(value->IsNumber()){
-        Image *img = ObjectWrap::Unwrap<Image>(info.This());
+        Image *img = ObjectWrap::Unwrap<Image>(args.This());
         img->pixels->SetWidth(value->Uint32Value());
     }
 } // }}}
 
-Handle<Value> Image::GetHeight(Local<String> prop, const AccessorInfo &info){ // {{{
-    HandleScope scope;
-    Image *img = ObjectWrap::Unwrap<Image>(info.This());
-    return scope.Close(Number::New(img->pixels->height));
+NAN_GETTER(Image::GetHeight) { // {{{
+    NanScope();
+
+    Image *img = ObjectWrap::Unwrap<Image>(args.This());
+    NanReturnValue(NanNew<Number>(img->pixels->height));
 } // }}}
 
-void Image::SetHeight(Local<String> prop, Local<Value> value, const AccessorInfo &info){ // {{{
+NAN_SETTER(Image::SetHeight) { // {{{
     if(value->IsNumber()){
-        Image *img = ObjectWrap::Unwrap<Image>(info.This());
+        Image *img = ObjectWrap::Unwrap<Image>(args.This());
         img->pixels->SetHeight(value->Uint32Value());
     }
 } // }}}
@@ -180,8 +185,9 @@ void Image::SetHeight(Local<String> prop, Local<Value> value, const AccessorInfo
  * Scale image with bicubic.
  * @since 1.5.5+
  */
-Handle<Value>Image::Resize(const Arguments &args) {
-    HandleScope scope;
+NAN_METHOD(Image::Resize) {
+    NanScope();
+
     char *filter = NULL;
 
     if( (!args[0]->IsNull() && !args[0]->IsUndefined () && !args[0]->IsNumber()) ||
@@ -196,20 +202,22 @@ Handle<Value>Image::Resize(const Arguments &args) {
 
     Image *img = ObjectWrap::Unwrap<Image>(args.This());
     img->pixels->Resize(args[0]->ToNumber()->Value(), args[1]->ToNumber()->Value(), filter);
-
-    return scope.Close(Undefined());
+    
+    NanReturnUndefined();
 }
 
 
 
-Handle<Value> Image::GetTransparent(Local<String> prop, const AccessorInfo &info){ // {{{
-    HandleScope scope;
-    Image *img = ObjectWrap::Unwrap<Image>(info.This());
-    return scope.Close(Number::New(img->pixels->type));
+NAN_GETTER(Image::GetTransparent) { // {{{
+    NanScope();
+
+    Image *img = ObjectWrap::Unwrap<Image>(args.This());
+    NanReturnValue(NanNew<Number>(img->pixels->type));
 } // }}}
 
-Handle<Value> Image::FillColor(const Arguments &args){ // {{{
-    HandleScope scope;
+NAN_METHOD(Image::FillColor) { // {{{
+    NanScope();
+
     Image *img;
     Pixel color, *cp;
 
@@ -230,12 +238,13 @@ Handle<Value> Image::FillColor(const Arguments &args){ // {{{
 
     img = ObjectWrap::Unwrap<Image>(args.This());
     img->pixels->Fill(cp);
-
-    return scope.Close(Undefined());
+    
+    NanReturnUndefined();
 } // }}}
 
-Handle<Value> Image::LoadFromBuffer(const Arguments &args){ // {{{
-    HandleScope scope;
+NAN_METHOD(Image::LoadFromBuffer) { // {{{
+    NanScope();
+
     Image *img;
 
     uint8_t *buffer;
@@ -277,21 +286,22 @@ Handle<Value> Image::LoadFromBuffer(const Arguments &args){ // {{{
         decoder = codec->decoder;
         input->position = 0;
         if(decoder != NULL && decoder(img->pixels, input) == SUCCESS){
-            return scope.Close(Undefined());
+            NanReturnUndefined();
         }
         codec = codec->next;
     }
     return isError() ? (THROW_GET_ERROR()) : THROW_ERROR("Unknow format");
 } // }}}
 
-Handle<Value> Image::CopyFromImage(const Arguments &args){ // {{{
-    HandleScope scope;
+NAN_METHOD(Image::CopyFromImage) { // {{{
+    NanScope();
+
     Image *src, *dst;
     uint32_t x, y, w, h;
 
     Local<Object> obj = args[0]->ToObject();
 
-    if(!Image::constructor->HasInstance(obj))
+    if(!NanHasInstance(Image::constructor, obj))
         return THROW_INVALID_ARGUMENTS_ERROR("");
 
     src = ObjectWrap::Unwrap<Image>(obj);
@@ -316,19 +326,19 @@ Handle<Value> Image::CopyFromImage(const Arguments &args){ // {{{
     if(dst->pixels->CopyFrom(src->pixels, x, y, w, h) != SUCCESS){
         return THROW_GET_ERROR();
     }
-
-    return scope.Close(Undefined());
+    
+    NanReturnUndefined();
 }// }}}
 
-Handle<Value> Image::DrawImage(const Arguments &args) { // {{{
-    HandleScope scope;
+NAN_METHOD(Image::DrawImage) { // {{{
+    NanScope();
 
     Image *src, *dst;
     size_t x, y;
 
     Local<Object> obj = args[0]->ToObject();
 
-    if(!Image::constructor->HasInstance(obj)
+    if(!NanHasInstance(Image::constructor, obj)
     || !args[1]->IsNumber() // x
     || !args[2]->IsNumber()) // y
         return THROW_INVALID_ARGUMENTS_ERROR("");
@@ -340,11 +350,12 @@ Handle<Value> Image::DrawImage(const Arguments &args) { // {{{
     y = args[2]->Uint32Value();
 
     dst->pixels->Draw(src->pixels, x, y);
-    return scope.Close(Undefined());
+
+    NanReturnUndefined();
 } // }}}
 
-Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
-    HandleScope scope;
+NAN_METHOD(Image::ToBuffer) { //{{{
+    NanScope();
 
     Image *img;
     ImageType type;
@@ -355,7 +366,7 @@ Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
 
     ImageData output_data, *output;
 
-    Buffer *buffer;
+    Local<Object> buffer;
     int length;
 
     if(!args[0]->IsNumber())
@@ -386,10 +397,10 @@ Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
                 if(encoder != NULL){
                     if(encoder(pixels, output, config) == SUCCESS){
                         length = output->position;
-                        buffer = Buffer::New(length);
-                        memcpy(Buffer::Data(buffer), output->data, length);
+                        buffer = NanNewBufferHandle(length);
+                        memcpy(node::Buffer::Data(buffer), output->data, length);
                         free(output->data);
-                        return scope.Close(buffer->handle_);
+                        NanReturnValue(buffer);
                     }else{
                         if(output->data != NULL)
                             free(output->data);
@@ -405,6 +416,7 @@ Handle<Value> Image::ToBuffer(const Arguments &args){ //{{{
     }else{
         return THROW_ERROR("Image uninitialized.");
     }
+
 } // }}}
 
 void Image::regCodec(ImageDecoder decoder, ImageEncoder encoder, ImageType type){ // {{{
@@ -424,7 +436,7 @@ Image::Image(){ // {{{
     pixels->type = EMPTY;
     pixels->data = NULL;
     size = sizeof(PixelArray) + sizeof(Image);
-    V8::AdjustAmountOfExternalAllocatedMemory(size);
+    NanAdjustExternalMemory(size);
     usedMemory += size;
     //survival++;
 } // }}}
@@ -434,7 +446,7 @@ Image::~Image(){ // {{{
     size = sizeof(PixelArray) + sizeof(Image);
     pixels->Free();
     free(pixels);
-    V8::AdjustAmountOfExternalAllocatedMemory(-size);
+    NanAdjustExternalMemory(-size);
     usedMemory -= size;
     //survival--;
     //printf("survival:%d\n", survival);
@@ -479,7 +491,7 @@ ImageState PixelArray::Malloc(size_t w, size_t h){ // {{{
         }
     }
     size = Size();
-    V8::AdjustAmountOfExternalAllocatedMemory(size);
+    NanAdjustExternalMemory(size);
     Image::usedMemory += size;
     return SUCCESS;
 
@@ -505,7 +517,7 @@ void PixelArray::Free(){ // {{{
         }
         free(data);
         size = Size();
-        V8::AdjustAmountOfExternalAllocatedMemory(-size);
+        NanAdjustExternalMemory(-size);
         Image::usedMemory -= size;
     }
 

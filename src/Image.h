@@ -7,9 +7,7 @@
 #define __NODE_IMAGE_H__
 
 #include <v8.h>
-#include <node.h>
-#include <node_object_wrap.h>
-#include <node_version.h>
+#include "nan.h"
 
 using namespace v8;
 using namespace node;
@@ -122,7 +120,7 @@ class Image: public node::ObjectWrap {
 
 		static Persistent<FunctionTemplate> constructor;
 
-		static void Initialize(Handle<Object> target);
+		static void Initialize(Handle<Object> exports);
 
 		// Error Handle
 		static ImageState setError(const char * err);
@@ -131,33 +129,33 @@ class Image: public node::ObjectWrap {
 
 		// Size Limit
 		static size_t maxWidth, maxHeight;
-		static Handle<Value> GetMaxWidth(Local<String> prop, const AccessorInfo &info);
-		static void SetMaxWidth(Local<String> prop, Local<Value> value, const AccessorInfo &info);
-		static Handle<Value> GetMaxHeight(Local<String> prop, const AccessorInfo &info);
-		static void SetMaxHeight(Local<String> prop, Local<Value> value, const AccessorInfo &info);
+		static NAN_GETTER(GetMaxWidth);
+		static NAN_SETTER(SetMaxWidth);
+		static NAN_GETTER(GetMaxHeight);
+		static NAN_SETTER(SetMaxHeight);
         
         // Memory
         static size_t usedMemory;
-        static Handle<Value> GetUsedMemory(Local<String> prop, const AccessorInfo &info);
-        static Handle<Value> GC(const Arguments &args);
+        static NAN_GETTER(GetUsedMemory);
+        static NAN_METHOD(GC);
 
 		// Image constructor
-		static Handle<Value> New(const Arguments &args);
+		static NAN_METHOD(New);
 
 		// Image.prototype
-		static Handle<Value> GetWidth(Local<String> prop, const AccessorInfo &info);
-		static void SetWidth(Local<String> prop, Local<Value> value, const AccessorInfo &info);
-		static Handle<Value> GetHeight(Local<String> prop, const AccessorInfo &info);
-		static void SetHeight(Local<String> prop, Local<Value> value, const AccessorInfo &info);
-		static Handle<Value> GetTransparent(Local<String> prop, const AccessorInfo &info);
+		static NAN_GETTER(GetWidth);
+		static NAN_SETTER(SetWidth);
+		static NAN_GETTER(GetHeight);
+		static NAN_SETTER(SetHeight);
+		static NAN_GETTER(GetTransparent);
 
-		static Handle<Value> Resize(const Arguments &args);
-		static Handle<Value> FillColor(const Arguments &args);
-		static Handle<Value> LoadFromBuffer(const Arguments &args);
-		static Handle<Value> CopyFromImage(const Arguments &args);
+		static NAN_METHOD(Resize);
+		static NAN_METHOD(FillColor);
+		static NAN_METHOD(LoadFromBuffer);
+		static NAN_METHOD(ToBuffer);
 
-		static Handle<Value> DrawImage(const Arguments &args);
-		static Handle<Value> ToBuffer(const Arguments &args);
+		static NAN_METHOD(CopyFromImage);
+		static NAN_METHOD(DrawImage);
 
 	private:
 		static const char *error;

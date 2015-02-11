@@ -29,6 +29,7 @@
     "url": "https://github.com/zhangyuanwei/node-images/issues"
   },
   "dependencies": {
+    "nan": "^1.6.2",
     "step": "0.0.5"
   }
 }

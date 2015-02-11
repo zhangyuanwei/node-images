@@ -22,6 +22,9 @@
     'targets': [{
         'target_name': 'binding',
         'sources': ['src/Image.cc', 'src/Resize.cc', 'src/resampler.cpp'],
+        "include_dirs" : [
+            "<!(node -e \"require('nan')\")"
+        ],
         'conditions': [
             ['OS=="win"', {}, {}],
             ['with_png=="true"', {
