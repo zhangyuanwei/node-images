@@ -32,12 +32,9 @@
                 'sources': ['src/Png.cc'],
                 'conditions': [
                     ['OS=="win"', {
-                        'libraries': [
-                            '-l<(THIRD_PATH)/libpng/projects/vstudio/ReleaseLibrary/libpng15.lib',
-                            '-l<(THIRD_PATH)/libpng/projects/vstudio/ReleaseLibrary/zlib.lib'],
-                        'include_dirs': [
-                            '<(THIRD_PATH)/libpng',
-                            '<(THIRD_PATH)/zlib']
+                        'dependencies': [
+                            './gyp/gyp/libpng.gyp:libpng',
+                        ]
                     }, {
                         'dependencies': [
                             './gyp/gyp/libpng.gyp:libpng',
@@ -50,12 +47,9 @@
                 'sources': ['src/Jpeg.cc'],
                 'conditions': [
                     ['OS=="win"', {
-                        'libraries': [
-							'-l<(THIRD_PATH)/libjpeg-turbo/lib/jpeg-static.lib',
-						],
-                        'include_dirs': [
-							'<(THIRD_PATH)/libjpeg-turbo/include',
-						]
+                        'dependencies': [
+                            './gyp/gyp/libjpeg-turbo.gyp:libjpeg-turbo',
+                        ]
                     }, {
                         'dependencies': [
                             './gyp/gyp/libjpeg-turbo.gyp:libjpeg-turbo',
@@ -68,9 +62,9 @@
                 'sources': ['src/Gif.cc'],
                 'conditions': [
                     ['OS=="win"', {
-                        'libraries': ['-l<(THIRD_PATH)\giflib\windows\giflib\Release\giflib.lib'],
-                        'include_dirs': [
-                            '<(THIRD_PATH)/giflib/lib']
+                        'dependencies': [
+                            './gyp/gyp/giflib.gyp:giflib',
+                        ]
                     }, {
                         'dependencies': [
                             './gyp/gyp/giflib.gyp:giflib',
