@@ -1,12 +1,25 @@
 {
   "name": "images",
-  "version": "2.1.0",
+  "version": "2.1.2",
   "description": "Cross-platform image decoder(png/jpeg/gif) and encoder(png/jpeg) for Node.js",
   "main": "index.js",
   "bindingsCDN": "https://raw.githubusercontent.com/zhangyuanwei/node-images/master/bindings/",
+  "bindingMap": {
+    "0.8.0": [
+      "0.8.0",
+      "0.8.25"
+    ],
+    "0.9.11": [
+      "0.10.0",
+      "0.10.99"
+    ],
+    "0.12.0": [
+      "0.12.0",
+      "0.12.99"
+    ]
+  },
   "scripts": {
-    "test": "node test.js",
-    "install": "(node ./install.js 2> builderror.log) || (exit 0)"
+    "test": "node test.js"
   },
   "repository": {
     "type": "git",
