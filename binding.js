@@ -22,7 +22,9 @@ function compiler(a, b) {
     return 0;
 }
 
-var bindingMap = require('./package.json').bindingMap;
+var pkgInf = require('./package.json');
+var bindingMap = pkgInf.bindingMap;
+var bugUrl = pkgInf['bugs'] ? (pkgInf['bugs']['url'] || '') : '';
 
 for ( var i in bindingMap)  {
     if (bindingMap.hasOwnProperty(i)) {
@@ -36,10 +38,10 @@ for ( var i in bindingMap)  {
                 module.exports = require('./bindings/'+ process.platform + '/' + process.arch + '/' + target + '/binding.node');
                 return;
             } catch ( e ) {
-                throw new Error('Can\'t load the addon. Issue to: https://github.com/zhangyuanwei/issues. ' + e.stack);
+                throw new Error('Can\'t load the addon. Issue to: ' + bugUrl + ' ' + e.stack);
             }
         }
     }
 }
 
-throw new Error('Can\'t load the addon. Issue to: https://github.com/zhangyuanwei/issues.');
+throw new Error('Can\'t load the addon. Issue to: ' + bugUrl);
