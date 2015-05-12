@@ -1,6 +1,20 @@
 
 'use strict';
 
+var fs = require('fs');
+
+var buildModule = __dirname + '/build/Release/binding.node';
+
+if (fs.existsSync(buildModule)) {
+    try {
+        module.exports = require(buildModule);
+    } catch (e) {
+        console.log('Cant\'t load `.node` module ' + buildModule);
+        throw e;
+    }
+    return;
+}
+
 function compiler(a, b) {
 
     if (!/^(?:\d+.?)+$/.test(a) || !/^(?:\d+.?)+/.test(b)) {
