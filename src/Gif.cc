@@ -5,6 +5,8 @@
 
 #include "Image.h"
 
+
+
 #ifdef HAVE_GIF
 
 #include <stdio.h>

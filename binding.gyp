@@ -21,7 +21,15 @@
     ],
     'targets': [{
         'target_name': 'binding',
-        'sources': ['src/Image.cc', 'src/Resize.cc', 'src/resampler.cpp'],
+        'sources': [
+            'src/Image.cc',
+            'src/Resize.cc',
+            'src/resampler.cpp',
+            'src/Png.cc',
+            'src/Gif.cc',
+            'src/Jpeg.cc',
+            'src/Raw.cc'
+        ],
         "include_dirs" : [
             "<!(node -e \"require('nan')\")"
         ],
