@@ -5,6 +5,8 @@
 
 #include "Image.h"
 
+
+
 #ifdef HAVE_RAW
 
 #include <stdlib.h>
