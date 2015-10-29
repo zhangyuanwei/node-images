@@ -1,29 +1,30 @@
 var images = require("../");
+var path = require('path');
 
-images("input.png")
+images(path.join(__dirname, "input.png"))
     .resize( 200 )
-    .save("output_new.png");
+    .save(path.join(__dirname, "output_new.png"));
 
 
-images("input.png")
+images(path.join(__dirname, "input.png"))
     .size( 200 )
-    .save("output_old.png");
+    .save(path.join(__dirname, "output_old.png"));
 
 
-images("input.jpg")
+images(path.join(__dirname, "input.jpg"))
     .resize( 200 )
-    .save("output_new.jpg");
+    .save(path.join(__dirname, "output_new.jpg"));
 
 
-images("input.jpg")
+images(path.join(__dirname, "input.jpg"))
     .size( 200 )
-    .save("output_old.jpg");
+    .save(path.join(__dirname, "output_old.jpg"));
 
-images("input.gif")
+images(path.join(__dirname, "input.gif"))
     .resize( 200 )
-    .save("output_new_gif.jpg");
+    .save(path.join(__dirname, "output_new_gif.jpg"));
 
 
-images("input.gif")
+images(path.join(__dirname, "input.gif"))
     .size( 200 )
-    .save("output_old_gif.jpg");
+    .save(path.join(__dirname, "output_old_gif.jpg"));
