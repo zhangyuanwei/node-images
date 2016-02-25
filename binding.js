@@ -26,9 +26,9 @@ function compiler(a, b) {
     var max = Math.max(aArr.length, bArr.length);
 
     for (var i = 0; i < max; i++) {
-        if ((aArr[i] && !bArr[i])  || aArr[i] > bArr[i]) {
+        if ((aArr[i] && !bArr[i])  || +aArr[i] > +bArr[i]) {
             return 1;
-        } else if ((!aArr[i] && bArr[i]) || aArr[i] < bArr[i]) {
+        } else if ((!aArr[i] && bArr[i]) || +aArr[i] < +bArr[i]) {
             return -1;
         }
     }
