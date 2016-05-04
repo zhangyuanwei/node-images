@@ -75,7 +75,7 @@ using v8::Object;
 #define AdjustAmountOfExternalAllocatedMemory(bc) static_cast<int>( \
         v8::Isolate::GetCurrent()->AdjustAmountOfExternalAllocatedMemory(bc));
 
-Persistent<Function> Image::constructor;
+Nan::Persistent<Function> Image::constructor;
 
 //size_t Image::survival;
 ImageCodec *Image::codecs;
@@ -85,31 +85,32 @@ size_t Image::maxHeight = DEFAULT_HEIGHT_LIMIT;
 const char *Image::error = NULL;
 
 void Image::Init(Local<Object> exports) { // {{{
-    Isolate *isolate = exports->GetIsolate();
+    Nan::HandleScope scope;
 
     regAllCodecs();
     //survival = 0;
 
     // Constructor
-    Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
-    tpl->SetClassName(String::NewFromUtf8(isolate, "Image"));
+    Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
+
+    tpl->SetClassName(Nan::New("Image").ToLocalChecked());
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
     // Prototype
     Local<ObjectTemplate> proto = tpl->PrototypeTemplate();
 
-    NODE_SET_PROTOTYPE_METHOD(tpl, "resize", Resize);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "fillColor", FillColor);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "loadFromBuffer", LoadFromBuffer);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "copyFromImage", CopyFromImage);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "drawImage", DrawImage);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "toBuffer", ToBuffer);
+    Nan::SetPrototypeMethod(tpl, "resize", Resize);
+    Nan::SetPrototypeMethod(tpl, "fillColor", FillColor);
+    Nan::SetPrototypeMethod(tpl, "loadFromBuffer", LoadFromBuffer);
+    Nan::SetPrototypeMethod(tpl, "copyFromImage", CopyFromImage);
+    Nan::SetPrototypeMethod(tpl, "drawImage", DrawImage);
+    Nan::SetPrototypeMethod(tpl, "toBuffer", ToBuffer);
 
-    proto->SetAccessor(String::NewFromUtf8(isolate, "width"), GetWidth, SetWidth);
-    proto->SetAccessor(String::NewFromUtf8(isolate, "height"), GetHeight, SetHeight);
-    proto->SetAccessor(String::NewFromUtf8(isolate, "transparent"), GetTransparent);
+    Nan::SetAccessor(proto, Nan::New("width").ToLocalChecked(), GetWidth, SetWidth);
+    Nan::SetAccessor(proto, Nan::New("height").ToLocalChecked(), GetHeight, SetHeight);
+    Nan::SetAccessor(proto, Nan::New("transparent").ToLocalChecked(), GetTransparent);
 
-    constructor.Reset(isolate, tpl->GetFunction());
+    constructor.Reset(tpl->GetFunction());
 
     NODE_DEFINE_CONSTANT(exports, TYPE_PNG);
     NODE_DEFINE_CONSTANT(exports, TYPE_JPEG);
@@ -117,13 +118,13 @@ void Image::Init(Local<Object> exports) { // {{{
     NODE_DEFINE_CONSTANT(exports, TYPE_BMP);
     NODE_DEFINE_CONSTANT(exports, TYPE_RAW);
 
+    Nan::SetAccessor(exports, Nan::New("maxWidth").ToLocalChecked(), GetMaxWidth, SetMaxWidth);
+    Nan::SetAccessor(exports, Nan::New("maxHeight").ToLocalChecked(), GetMaxHeight, SetMaxHeight);
+    Nan::SetAccessor(exports, Nan::New("usedMemory").ToLocalChecked(), GetUsedMemory);
 
-    exports->SetAccessor(String::NewFromUtf8(isolate, "maxWidth"), GetMaxWidth, SetMaxWidth);
-    exports->SetAccessor(String::NewFromUtf8(isolate, "maxHeight"), GetMaxHeight, SetMaxHeight);
-    exports->SetAccessor(String::NewFromUtf8(isolate, "usedMemory"), GetUsedMemory);
-    NODE_SET_METHOD(exports, "gc", GC);
+    Nan::SetMethod(exports, "gc", GC);
 
-    exports->Set(String::NewFromUtf8(isolate, "Image"), tpl->GetFunction());
+    exports->Set(Nan::New("Image").ToLocalChecked(), tpl->GetFunction());
 
 } //}}}
 
@@ -133,7 +134,7 @@ ImageState Image::setError(const char * err){ // {{{
 } // }}}
 
 Local<Value> Image::getError(){ // {{{
-    Local<Value> err = Exception::Error(String::NewFromUtf8(Isolate::GetCurrent(), error ? error : "Unknow Error"));
+    Local<Value> err = Exception::Error(Nan::New(error ? error : "Unknow Error").ToLocalChecked());
     error = NULL;
     return err;
 } // }}}
@@ -142,22 +143,21 @@ bool Image::isError(){ // {{{
     return error != NULL;
 } // }}}
 
-void Image::GetMaxWidth(Local<String> property, const PropertyCallbackInfo<Value> &args) { // {{{
-    Isolate *isolate = args.GetIsolate();
-    args.GetReturnValue().Set(Number::New(isolate, maxWidth));
+NAN_GETTER(Image::GetMaxWidth) { // {{{
+    info.GetReturnValue().Set(Nan::New<Number>(maxWidth));
 
 } // }}}
 
-void Image::SetMaxWidth(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void> &args) { // {{{
+NAN_SETTER(Image::SetMaxWidth) { // {{{
     if(value->IsNumber())
         maxWidth = value->Uint32Value();
 } // }}}
 
-void Image::GetMaxHeight(Local<String> property, const PropertyCallbackInfo<Value> &args) { // {{{
-
+NAN_GETTER(Image::GetMaxHeight) {
+    info.GetReturnValue().Set(Nan::New<Number>(maxHeight));
 } // }}}
 
-void Image::SetMaxHeight(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void> &args) { // {{{
+NAN_SETTER(Image::SetMaxHeight) { // {{{
     if(value->IsNumber())
         maxHeight = value->Uint32Value();
 } // }}}
@@ -165,18 +165,17 @@ void Image::SetMaxHeight(Local<String> property, Local<Value> value, const Prope
 // Memory
 size_t Image::usedMemory = 0;
 
-void Image::GetUsedMemory(Local<String> property, const PropertyCallbackInfo<Value>&args) { // {{{
-    Isolate *isolate = args.GetIsolate();
-    args.GetReturnValue().Set(Number::New(isolate, usedMemory));
+NAN_GETTER(Image::GetUsedMemory) { // {{{
+
+    info.GetReturnValue().Set(Nan::New<Number>(usedMemory));
 } // }}}
 
-void Image::GC(const FunctionCallbackInfo <Value> &args) { // {{{
+NAN_METHOD(Image::GC) { // {{{
     //V8::LowMemoryNotification();
-    Isolate *isolate = args.GetIsolate();
-    args.GetReturnValue().Set(v8::Undefined(isolate));
+    info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
 } // }}}
 
-void Image::New(const FunctionCallbackInfo<Value> &args) { // {{{
+NAN_METHOD(Image::New) { // {{{
 
     Image *img;
 
@@ -184,43 +183,46 @@ void Image::New(const FunctionCallbackInfo<Value> &args) { // {{{
 
     width = height = 0;
 
-    if(args[0]->IsNumber()) width = args[0]->Uint32Value();
-    if(args[1]->IsNumber()) height = args[1]->Uint32Value();
+    if (info.IsConstructCall()) {
+        if(info[0]->IsNumber()) width = info[0]->Uint32Value();
+        if(info[1]->IsNumber()) height = info[1]->Uint32Value();
 
-    img = new Image();
+        img = new Image();
 
-    if(img->pixels->Malloc(width, height) != SUCCESS) {
-        THROW_GET_ERROR();
+        if(img->pixels->Malloc(width, height) != SUCCESS) {
+            THROW_GET_ERROR();
+        }
+
+        img->Wrap(info.This());
+
+        info.GetReturnValue().Set(info.This());
+    } else {
+        THROW_ERROR("must be use new Image.");
     }
-
-    img->Wrap(args.This());
-
-    args.GetReturnValue().Set(args.This());
 } // }}}
 
-void Image::GetWidth(Local<String> property, const PropertyCallbackInfo<Value> &args) { // {{{
-    Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
-    Isolate *isolate = args.GetIsolate();
-    args.GetReturnValue().Set(Number::New(isolate, img->pixels->width));
+NAN_GETTER(Image::GetWidth) { // {{{
+    Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
+    info.GetReturnValue().Set(Nan::New<Number>(img->pixels->width));
 } // }}}
 
-void Image::SetWidth(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void> &args){ // {{{
+NAN_SETTER(Image::SetWidth) { // {{{
     if(value->IsNumber()){
-        Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
+        Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
         img->pixels->SetWidth(value->Uint32Value());
     }
 } // }}}
 
-void Image::GetHeight(Local<String> property, const PropertyCallbackInfo<Value> &args) { // {{{
+NAN_GETTER(Image::GetHeight) { // {{{
 
-    Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
-    args.GetReturnValue().Set(Number::New(args.GetIsolate(), img->pixels->height));
+    Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
+    info.GetReturnValue().Set(Nan::New<Number>(img->pixels->height));
 
 } // }}}
 
-void Image::SetHeight(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void> &args) { // {{{
+NAN_SETTER(Image::SetHeight) { // {{{
     if(value->IsNumber()){
-        Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
+        Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
         img->pixels->SetHeight(value->Uint32Value());
     }
 } // }}}
@@ -230,64 +232,64 @@ void Image::SetHeight(Local<String> property, Local<Value> value, const Property
  * Scale image with bicubic.
  * @since 1.5.5+
  */
-void Image::Resize(const FunctionCallbackInfo<Value> &args) {
+NAN_METHOD(Image::Resize) {
 
     char *filter = NULL;
 
-    if( (!args[0]->IsNull() && !args[0]->IsUndefined () && !args[0]->IsNumber()) ||
-            (!args[1]->IsNull() && !args[1]->IsUndefined () && !args[1]->IsNumber()) ) {
+    if( (!info[0]->IsNull() && !info[0]->IsUndefined () && !info[0]->IsNumber()) ||
+            (!info[1]->IsNull() && !info[1]->IsUndefined () && !info[1]->IsNumber()) ) {
         THROW_INVALID_ARGUMENTS_ERROR("Arguments error");
         return;
     }
 
-    if ( args[2]->IsString() ) {
-        String::Utf8Value cstr(args[2]);
+    if ( info[2]->IsString() ) {
+        String::Utf8Value cstr(info[2]);
         filter = new char[strlen(*cstr)+1];
         strcpy(filter, *cstr);
     }
 
-    Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
-    img->pixels->Resize(args[0]->ToNumber()->Value(), args[1]->ToNumber()->Value(), filter);
+    Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
+    img->pixels->Resize(info[0]->ToNumber()->Value(), info[1]->ToNumber()->Value(), filter);
 
-    args.GetReturnValue().Set(v8::Undefined(args.GetIsolate()));
+    info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
 }
 
 
 
-void Image::GetTransparent(Local<String> property, const PropertyCallbackInfo<Value> &args) { // {{{
-    Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
-    args.GetReturnValue().Set(Number::New(args.GetIsolate(), img->pixels->type));
+NAN_GETTER(Image::GetTransparent) { // {{{
+    Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
+    info.GetReturnValue().Set(Nan::New<Number>(img->pixels->type));
 } // }}}
 
-void Image::FillColor(const FunctionCallbackInfo<Value> &args) { // {{{
+NAN_METHOD(Image::FillColor) { // {{{
 
     Image *img;
     Pixel color, *cp;
 
-    if(!args[0]->IsNumber()
-            || !args[1]->IsNumber()
-            || !args[2]->IsNumber()) {
+    if(!info[0]->IsNumber()
+            || !info[1]->IsNumber()
+            || !info[2]->IsNumber()) {
         THROW_INVALID_ARGUMENTS_ERROR("");
         return;
     }
 
     cp = &color;
-    cp->R = args[0]->Uint32Value();
-    cp->G = args[1]->Uint32Value();
-    cp->B = args[2]->Uint32Value();
+    cp->R = info[0]->Uint32Value();
+    cp->G = info[1]->Uint32Value();
+    cp->B = info[2]->Uint32Value();
     cp->A = 0xFF;
 
-    if(args[3]->IsNumber()){
-        cp->A = (uint8_t) (args[3]->NumberValue() * 0xFF);
+    if(info[3]->IsNumber()){
+        cp->A = (uint8_t) (info[3]->NumberValue() * 0xFF);
     }
 
-    img = node::ObjectWrap::Unwrap<Image>(args.This());
+    img = ObjectWrap::Unwrap<Image>(info.Holder());
     img->pixels->Fill(cp);
 
-    args.GetReturnValue().Set(v8::Undefined(args.GetIsolate()));
+    info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
 } // }}}
 
-void Image::LoadFromBuffer(const FunctionCallbackInfo<Value> &args) { // {{{
+NAN_METHOD(Image::LoadFromBuffer) { // {{{
 
     Image *img;
 
@@ -298,24 +300,24 @@ void Image::LoadFromBuffer(const FunctionCallbackInfo<Value> &args) { // {{{
     ImageDecoder decoder;
     ImageData input_data, *input;
 
-    if(!node::Buffer::HasInstance(args[0])){
+    if(!node::Buffer::HasInstance(info[0])){
         THROW_TYPE_ERROR(": first argument must be a buffer.");
         return;
     }
 
-    img = node::ObjectWrap::Unwrap<Image>(args.This());
+    img = ObjectWrap::Unwrap<Image>(info.Holder());
 
-    buffer = (uint8_t *) node::Buffer::Data(args[0]);
-    length = (unsigned) node::Buffer::Length(args[0]);
+    buffer = (uint8_t *) node::Buffer::Data(info[0]);
+    length = (unsigned) node::Buffer::Length(info[0]);
 
     start = 0;
-    if(args[1]->IsNumber()){
-        start = args[1]->Uint32Value();
+    if(info[1]->IsNumber()){
+        start = info[1]->Uint32Value();
     }
 
     end = length;
-    if(args[2]->IsNumber()){
-        end = args[2]->Uint32Value();
+    if(info[2]->IsNumber()){
+        end = info[2]->Uint32Value();
         if(end < start || end > length){
             THROW_TYPE_ERROR("");
             return;
@@ -332,7 +334,7 @@ void Image::LoadFromBuffer(const FunctionCallbackInfo<Value> &args) { // {{{
         decoder = codec->decoder;
         input->position = 0;
         if(decoder != NULL && decoder(img->pixels, input) == SUCCESS){
-            args.GetReturnValue().Set(v8::Undefined(args.GetIsolate()));
+            info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
             return;
         }
         codec = codec->next;
@@ -341,32 +343,32 @@ void Image::LoadFromBuffer(const FunctionCallbackInfo<Value> &args) { // {{{
     return;
 } // }}}
 
-void Image::CopyFromImage(const FunctionCallbackInfo<Value> &args) { // {{{
+NAN_METHOD(Image::CopyFromImage) { // {{{
 
     Image *src, *dst;
     uint32_t x, y, w, h;
 
-    Local<Object> obj = args[0]->ToObject();
+    Local<Object> obj = info[0]->ToObject();
 
     //@TODO
 
-    src = node::ObjectWrap::Unwrap<Image>(obj);
-    dst = node::ObjectWrap::Unwrap<Image>(args.This());
+    src = ObjectWrap::Unwrap<Image>(obj);
+    dst = ObjectWrap::Unwrap<Image>(info.Holder());
 
     x = y = 0;
     w = src->pixels->width;
     h = src->pixels->height;
 
-    if(args[1]->IsNumber()   // x
-            && args[2]->IsNumber()){ // y
-        x = args[1]->Uint32Value();
-        y = args[2]->Uint32Value();
+    if(info[1]->IsNumber()   // x
+            && info[2]->IsNumber()){ // y
+        x = info[1]->Uint32Value();
+        y = info[2]->Uint32Value();
     }
 
-    if(args[3]->IsNumber()   // w
-            && args[4]->IsNumber()){ // h
-        w = args[3]->Uint32Value();
-        h = args[4]->Uint32Value();
+    if(info[3]->IsNumber()   // w
+            && info[4]->IsNumber()){ // h
+        w = info[3]->Uint32Value();
+        h = info[4]->Uint32Value();
     }
 
     if(dst->pixels->CopyFrom(src->pixels, x, y, w, h) != SUCCESS){
@@ -375,33 +377,33 @@ void Image::CopyFromImage(const FunctionCallbackInfo<Value> &args) { // {{{
 
 }// }}}
 
-void Image::DrawImage(const FunctionCallbackInfo<Value> &args) { // {{{
+NAN_METHOD(Image::DrawImage) { // {{{
 
     Image *src, *dst;
     size_t x, y;
 
-    Local<Object> obj = args[0]->ToObject();
+    Local<Object> obj = info[0]->ToObject();
 
     //if(!NanHasInstance(Image::constructor, obj)
     //   || !args[1]->IsNumber() // x
     //   || !args[2]->IsNumber()) // y
-    if (!args[1]->IsNumber() || !args[2]->IsNumber()) {
+    if (!info[1]->IsNumber() || !info[2]->IsNumber()) {
         THROW_INVALID_ARGUMENTS_ERROR("");
         return;
     }
 
-    src = node::ObjectWrap::Unwrap<Image>(obj);
-    dst = node::ObjectWrap::Unwrap<Image>(args.This());
+    src = ObjectWrap::Unwrap<Image>(obj);
+    dst = ObjectWrap::Unwrap<Image>(info.Holder());
 
-    x = args[1]->Uint32Value();
-    y = args[2]->Uint32Value();
+    x = info[1]->Uint32Value();
+    y = info[2]->Uint32Value();
 
     dst->pixels->Draw(src->pixels, x, y);
 
-    args.GetReturnValue().Set(v8::Undefined(args.GetIsolate()));
+    info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
 } // }}}
 
-void Image::ToBuffer(const FunctionCallbackInfo<Value> &args) { //{{{
+NAN_METHOD(Image::ToBuffer) { //{{{
 
     Image *img;
     ImageType type;
@@ -416,20 +418,20 @@ void Image::ToBuffer(const FunctionCallbackInfo<Value> &args) { //{{{
 
     int length;
 
-    if(!args[0]->IsNumber()) {
+    if(!info[0]->IsNumber()) {
         THROW_INVALID_ARGUMENTS_ERROR("");
         return;
     }
 
-    type = (ImageType) args[0]->Uint32Value();
+    type = (ImageType) info[0]->Uint32Value();
     config = NULL;
-    if(node::Buffer::HasInstance(args[1])){
+    if(node::Buffer::HasInstance(info[1])){
         config = &_config;
-        config->data = node::Buffer::Data(args[1]->ToObject());
-        config->length = node::Buffer::Length(args[1]->ToObject());
+        config->data = node::Buffer::Data(info[1]->ToObject());
+        config->length = node::Buffer::Length(info[1]->ToObject());
     }
 
-    img = node::ObjectWrap::Unwrap<Image>(args.This());
+    img = ObjectWrap::Unwrap<Image>(info.Holder());
     pixels = img->pixels;
 
     if(pixels->data != NULL){
@@ -445,11 +447,11 @@ void Image::ToBuffer(const FunctionCallbackInfo<Value> &args) { //{{{
                 if(encoder != NULL){
                     if(encoder(pixels, output, config) == SUCCESS){
                         length = output->position;
-                        MaybeLocal<Object> maybeBuffer = node::Buffer::New(args.GetIsolate(), (size_t) length);
+                        MaybeLocal<Object> maybeBuffer = node::Buffer::New(info.GetIsolate(), (size_t) length);
                         maybeBuffer.ToLocal(&buffer);
                         memcpy(node::Buffer::Data(buffer), output->data, length);
                         free(output->data);
-                        args.GetReturnValue().Set(buffer);
+                        info.GetReturnValue().Set(buffer);
                         return;
                     }else{
                         if(output->data != NULL)

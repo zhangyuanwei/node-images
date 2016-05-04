@@ -29,8 +29,7 @@
 #ifndef __NODE_IMAGE_H__
 #define __NODE_IMAGE_H__
 
-#include <node.h>
-#include <node_object_wrap.h>
+#include <nan.h>
 
 typedef enum {
     TYPE_PNG = 1,
@@ -152,63 +151,48 @@ IMAGE_CODEC(Raw);
 
 #endif
 
-class Image : public node::ObjectWrap {
+class Image : public Nan::ObjectWrap {
     public:
-
-        static v8::Persistent<v8::Function> constructor;
-
-        static void Init(v8::Local<v8::Object> exports);
+        static Nan::Persistent<v8::Function> constructor;
+        static  NAN_MODULE_INIT(Init);
 
         // Error Handle
         static ImageState setError(const char *err);
-
         static v8::Local<v8::Value> getError();
-
         static bool isError();
 
         // Size Limit
         static size_t maxWidth, maxHeight;
 
-        static void GetMaxWidth(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
+        static NAN_GETTER(GetMaxWidth);
+        static NAN_SETTER(SetMaxWidth);
 
-        static void SetMaxWidth(v8::Local<v8::String>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<void> &args);
-
-        static void GetMaxHeight(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
-
-        static void SetMaxHeight(v8::Local<v8::String>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<void> &args);
+        static NAN_GETTER(GetMaxHeight);
+        static NAN_SETTER(SetMaxHeight);
 
         // Memory
         static size_t usedMemory;
-
-        static void GetUsedMemory(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
-
-        static void GC(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static NAN_GETTER(GetUsedMemory);
+        static NAN_METHOD(GC);
 
         // Image constructor
-        static void New(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static NAN_METHOD(New);
 
         // Image.prototype
-        static void GetWidth(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
+        static NAN_GETTER(GetWidth);
+        static NAN_SETTER(SetWidth);
 
-        static void SetWidth(v8::Local<v8::String>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<void> &args);
+        static NAN_GETTER(GetHeight);
+        static NAN_SETTER(SetHeight);
 
-        static void GetHeight(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
+        static NAN_GETTER(GetTransparent);
 
-        static void SetHeight(v8::Local<v8::String>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<void> &args);
-
-        static void GetTransparent(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
-
-        static void Resize(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-        static void FillColor(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-        static void LoadFromBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-        static void ToBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-        static void CopyFromImage(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-        static void DrawImage(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static NAN_METHOD(Resize);
+        static NAN_METHOD(FillColor);
+        static NAN_METHOD(LoadFromBuffer);
+        static NAN_METHOD(ToBuffer);
+        static NAN_METHOD(CopyFromImage);
+        static NAN_METHOD(DrawImage);
 
     private:
         static const char *error;

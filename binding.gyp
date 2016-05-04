@@ -31,6 +31,7 @@
             'src/Raw.cc'
         ],
         "include_dirs" : [
+            "<!(node -e \"require('nan')\")"
         ],
         'conditions': [
             ['OS=="win"', {}, {}],
