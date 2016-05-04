@@ -202,27 +202,27 @@ NAN_METHOD(Image::New) { // {{{
 } // }}}
 
 NAN_GETTER(Image::GetWidth) { // {{{
-    Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
+    Image *img = ObjectWrap::Unwrap<Image>(info.This());
     info.GetReturnValue().Set(Nan::New<Number>(img->pixels->width));
 } // }}}
 
 NAN_SETTER(Image::SetWidth) { // {{{
     if(value->IsNumber()){
-        Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
+        Image *img = ObjectWrap::Unwrap<Image>(info.This());
         img->pixels->SetWidth(value->Uint32Value());
     }
 } // }}}
 
 NAN_GETTER(Image::GetHeight) { // {{{
 
-    Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
+    Image *img = ObjectWrap::Unwrap<Image>(info.This());
     info.GetReturnValue().Set(Nan::New<Number>(img->pixels->height));
 
 } // }}}
 
 NAN_SETTER(Image::SetHeight) { // {{{
     if(value->IsNumber()){
-        Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
+        Image *img = ObjectWrap::Unwrap<Image>(info.This());
         img->pixels->SetHeight(value->Uint32Value());
     }
 } // }}}
@@ -248,7 +248,7 @@ NAN_METHOD(Image::Resize) {
         strcpy(filter, *cstr);
     }
 
-    Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
+    Image *img = ObjectWrap::Unwrap<Image>(info.This());
     img->pixels->Resize(info[0]->ToNumber()->Value(), info[1]->ToNumber()->Value(), filter);
 
     info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
@@ -257,7 +257,7 @@ NAN_METHOD(Image::Resize) {
 
 
 NAN_GETTER(Image::GetTransparent) { // {{{
-    Image *img = ObjectWrap::Unwrap<Image>(info.Holder());
+    Image *img = ObjectWrap::Unwrap<Image>(info.This());
     info.GetReturnValue().Set(Nan::New<Number>(img->pixels->type));
 } // }}}
 
@@ -283,7 +283,7 @@ NAN_METHOD(Image::FillColor) { // {{{
         cp->A = (uint8_t) (info[3]->NumberValue() * 0xFF);
     }
 
-    img = ObjectWrap::Unwrap<Image>(info.Holder());
+    img = ObjectWrap::Unwrap<Image>(info.This());
     img->pixels->Fill(cp);
 
     info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
@@ -305,7 +305,7 @@ NAN_METHOD(Image::LoadFromBuffer) { // {{{
         return;
     }
 
-    img = ObjectWrap::Unwrap<Image>(info.Holder());
+    img = ObjectWrap::Unwrap<Image>(info.This());
 
     buffer = (uint8_t *) node::Buffer::Data(info[0]);
     length = (unsigned) node::Buffer::Length(info[0]);
@@ -353,7 +353,7 @@ NAN_METHOD(Image::CopyFromImage) { // {{{
     //@TODO
 
     src = ObjectWrap::Unwrap<Image>(obj);
-    dst = ObjectWrap::Unwrap<Image>(info.Holder());
+    dst = ObjectWrap::Unwrap<Image>(info.This());
 
     x = y = 0;
     w = src->pixels->width;
@@ -393,7 +393,7 @@ NAN_METHOD(Image::DrawImage) { // {{{
     }
 
     src = ObjectWrap::Unwrap<Image>(obj);
-    dst = ObjectWrap::Unwrap<Image>(info.Holder());
+    dst = ObjectWrap::Unwrap<Image>(info.This());
 
     x = info[1]->Uint32Value();
     y = info[2]->Uint32Value();
@@ -431,7 +431,7 @@ NAN_METHOD(Image::ToBuffer) { //{{{
         config->length = node::Buffer::Length(info[1]->ToObject());
     }
 
-    img = ObjectWrap::Unwrap<Image>(info.Holder());
+    img = ObjectWrap::Unwrap<Image>(info.This());
     pixels = img->pixels;
 
     if(pixels->data != NULL){
