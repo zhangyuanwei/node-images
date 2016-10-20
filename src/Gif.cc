@@ -102,7 +102,7 @@ DECODER_FN(Gif){
 	ret = FAIL;
 
 	input->position = 0;
-	if((gif = DGifOpen((void *) input, ReadFromMemory)) == NULL) goto RETURN;
+	if((gif = DGifOpen((void *) input, ReadFromMemory, NULL)) == NULL) goto RETURN;
 	width = gif->SWidth;
 	height = gif->SHeight;
 	//printf("width:%d,height:%d\n", width, height);
@@ -221,7 +221,7 @@ FREE_ROWS:
 	free(rows);
 
 CLOSE_GIF:
-	DGifCloseFile(gif);
+	DGifCloseFile(gif, NULL);
 
 RETURN:
 	//if(ret!=SUCCESS)

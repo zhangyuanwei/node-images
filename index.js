@@ -177,6 +177,7 @@ images.TYPE_JPEG = _images.TYPE_JPEG;
 images.TYPE_GIF = _images.TYPE_GIF;
 images.TYPE_BMP = _images.TYPE_BMP;
 images.TYPE_RAW = _images.TYPE_RAW;
+images.TYPE_WEBP = _images.TYPE_WEBP;
 
 FILE_TYPE_MAP = {
     ".png": images.TYPE_PNG,
@@ -184,7 +185,8 @@ FILE_TYPE_MAP = {
     ".jpeg": images.TYPE_JPEG,
     ".gif": images.TYPE_GIF,
     ".bmp": images.TYPE_BMP,
-    ".raw": images.TYPE_RAW
+    ".raw": images.TYPE_RAW,
+    ".webp": images.TYPE_WEBP
 };
 
 CONFIG_GENERATOR = [];

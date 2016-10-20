@@ -38,6 +38,7 @@ typedef enum {
     TYPE_GIF,
     TYPE_BMP,
     TYPE_RAW,
+    TYPE_WEBP,
 } ImageType;
 
 typedef enum {
@@ -123,33 +124,27 @@ typedef struct ImageCodec {
 
 
 #ifdef HAVE_PNG
-
 IMAGE_CODEC(Png);
-
-// DECODER_FN(Png);ENCODER_FN(Png)
-// ImageState DECODER(Png)(PixelArray *output, ImageData *input); ...
-// ImageState decodePng(PixelArray *output, ImageData *input);
-// ImageState encodePng(PixelArray *input, ImageData *output, ImageConfig *config)
-
-
 #endif
+
 #ifdef HAVE_JPEG
-
 IMAGE_CODEC(Jpeg);
-
 #endif
+
 #ifdef HAVE_GIF
-
 IMAGE_CODEC(Gif);
-
 #endif
+
 #ifdef HAVE_BMP
 IMAGE_CODEC(Bmp);
 #endif
+
 #ifdef HAVE_RAW
-
 IMAGE_CODEC(Raw);
+#endif
 
+#ifdef HAVE_WEBP
+IMAGE_CODEC(Webp);
 #endif
 
 class Image : public node::ObjectWrap {
@@ -220,6 +215,9 @@ class Image : public node::ObjectWrap {
 
         static void regAllCodecs() {
             codecs = NULL;
+#ifdef HAVE_WEBP
+            regCodec(DECODER(Webp), ENCODER(Webp), TYPE_WEBP);
+#endif
 #ifdef HAVE_RAW
             regCodec(DECODER(Raw), ENCODER(Raw), TYPE_RAW);
 #endif

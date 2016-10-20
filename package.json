@@ -1,7 +1,7 @@
 {
   "name": "images",
   "version": "2.2.0",
-  "description": "Cross-platform image decoder(png/jpeg/gif) and encoder(png/jpeg) for Node.js",
+  "description": "Cross-platform image decoder(webp/png/jpeg/gif) and encoder(webp/png/jpeg) for Node.js",
   "main": "index.js",
   "bindingsCDN": "https://raw.githubusercontent.com/zhangyuanwei/node-images/master/bindings/",
   "bindingMap": {
@@ -38,6 +38,7 @@
     "image",
     "decoder",
     "encoder",
+    "webp",
     "png",
     "jpeg",
     "gif",

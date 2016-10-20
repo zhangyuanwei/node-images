@@ -70,10 +70,10 @@ DECODER_FN(Raw){ // {{{
 	for(y = 0; y < height; y++){
 		for(x = 0; x < width; x++){
 			dp = &(output->data[y][x]);
-			dp->R = sp->B;
+			dp->R = sp->R;
 			dp->G = sp->G;
-			dp->B = sp->R;
-			dp->A = 0xFF;
+			dp->B = sp->B;
+			dp->A = sp->A;
 			sp++;
 		}
 	}
@@ -117,10 +117,10 @@ ENCODER_FN(Raw){ // {{{
 	for(y = 0; y < height; y++){
 		for(x = 0; x < width; x++){
 			sp = &(input->data[y][x]);
-			dp->R = sp->B;
+			dp->R = sp->R;
 			dp->G = sp->G;
-			dp->B = sp->R;
-			dp->A = 0x00;
+			dp->B = sp->B;
+			dp->A = sp->A;
 			dp++;
 		}
 	}

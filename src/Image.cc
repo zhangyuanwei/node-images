@@ -116,6 +116,7 @@ void Image::Init(Local<Object> exports) { // {{{
     NODE_DEFINE_CONSTANT(exports, TYPE_GIF);
     NODE_DEFINE_CONSTANT(exports, TYPE_BMP);
     NODE_DEFINE_CONSTANT(exports, TYPE_RAW);
+    NODE_DEFINE_CONSTANT(exports, TYPE_WEBP);
 
 
     exports->SetAccessor(String::NewFromUtf8(isolate, "maxWidth"), GetMaxWidth, SetMaxWidth);
