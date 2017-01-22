@@ -21,28 +21,28 @@
                 'defines': ['HAVE_PNG'],
                 'sources': ['src/Png.cc'],
                 'dependencies': [
-                    'gyp/libpng.gyp:libpng',
+                    'gyp/gyp/libpng.gyp:libpng',
                 ]
             }],
             ['with_jpeg=="true"', {
                 'defines': ['HAVE_JPEG'],
                 'sources': ['src/Jpeg.cc'],
                 'dependencies': [
-                    'gyp/libjpeg-turbo.gyp:libjpeg-turbo',
+                    'gyp/gyp/libjpeg-turbo.gyp:libjpeg-turbo',
                 ]
             }],
             ['with_gif=="true"', {
                 'defines': ['HAVE_GIF'],
                 'sources': ['src/Gif.cc'],
                 'dependencies': [
-                    'gyp/giflib.gyp:giflib',
+                    'gyp/gyp/giflib.gyp:giflib',
                 ]
             }],
-            ['with_webp=="true"', {
+            ['with_webp=="false"', {
                 'defines': ['HAVE_WEBP'],
                 'sources': ['src/Webp.cc'],
                 'dependencies': [
-                    'gyp/libwebp.gyp:libwebp',
+                    'gyp/gyp/libwebp.gyp:libwebp',
                 ]
             }],
             ['with_bmp=="true"', {
