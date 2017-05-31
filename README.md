@@ -15,7 +15,7 @@ images("input.jpg")                     //Load image from file
                                         //在(10,10)处绘制Logo
     .save("output.jpg", {               //Save the image to a file, with the quality of 50
         quality : 50                    //保存图片到文件,图片质量为50
-	});
+    });
 ```
 ## Features 功能特性
 
