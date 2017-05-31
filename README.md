@@ -13,17 +13,17 @@ images("input.jpg")                     //Load image from file
                                         //等比缩放图像到400像素宽
     .draw(images("logo.png"), 10, 10)   //Drawn logo at coordinates (10,10)
                                         //在(10,10)处绘制Logo
-    .save("output.jpg", {               //Save the image to a file,whih quality 50
+    .save("output.jpg", {               //Save the image to a file, with the quality of 50
         quality : 50                    //保存图片到文件,图片质量为50
-	});
+    });
 ```
 ## Features 功能特性
 
-* Lightweight:no need to install any image processing library.
+* Lightweight: no need to install any image processing library.
 * 轻量级：无需安装任何图像处理库。
 * Cross-platform: Released a compiled .node file on windows, just download and start.
 * 跨平台：Windows下发布了编译好的.node文件,下载就能用。
-* Easy-to-use: Provide jQuery-like chaining API.Simple and reliable!
+* Easy-to-use: Provide jQuery-like chaining API. Simple and reliable!
 * 方便用：jQuery风格的API，简单可依赖。
 
 ## Installation 安装
@@ -122,5 +122,5 @@ Get used memory (in bytes)
 得到图像处理库占用的内存大小(单位为字节)
 
 ### images.gc()
-Forced call garbage collection  
+Forced garbage collection  
 强制调用V8的垃圾回收机制
