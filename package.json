@@ -1,6 +1,6 @@
 {
   "name": "images",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Cross-platform image decoder(webp/png/jpeg/gif) and encoder(webp/png/jpeg) for Node.js",
   "main": "index.js",
   "scripts": {
