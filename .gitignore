@@ -1,6 +1,7 @@
 lib-cov
 /node_modules
 /test/output*
+/vendor
 .idea
 .DS_Store
 *.seed

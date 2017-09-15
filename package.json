@@ -1,50 +1,23 @@
 {
   "name": "images",
-  "version": "2.2.2",
+  "version": "3.0.0",
   "description": "Cross-platform image decoder(webp/png/jpeg/gif) and encoder(webp/png/jpeg) for Node.js",
   "main": "index.js",
-  "bindingsCDN": "https://raw.githubusercontent.com/zhangyuanwei/node-images/master/bindings/",
-  "bindingMap": {
-    "0.8.0": [
-      "0.8.0",
-      "0.8.25"
-    ],
-    "0.9.11": [
-      "0.10.0",
-      "0.10.99"
-    ],
-    "0.12.0": [
-      "0.12.0",
-      "0.12.99"
-    ],
-    "4.0.0": [
-      "4.0.0",
-      "4.99.99"
-    ],
-    "5.0.0": [
-      "5.0.0",
-      "5.99.99"
-    ],
-    "6.0.0" : [
-      "6.0.0",
-      "6.99.99"
-    ],
-    "7.0.0": [
-      "7.0.0",
-      "7.99.99"
-    ],
-    "8.0.0": [
-      "8.0.0",
-      "8.99.99"
-    ]
-  },
   "scripts": {
     "test": "node test.js",
-    "install": "echo \"Hello, World.\""
+    "install": "node ./scripts/install.js"
   },
+  "repositoryName": "zhangyuanwei/node-images",
   "repository": {
     "type": "git",
     "url": "https://github.com/zhangyuanwei/node-images.git"
+  },
+  "dependencies": {
+    "mkdirp": "^0.5.1",
+    "nan": "^2.3.2",
+    "node-gyp": "^3.3.1",
+    "npmlog": "^4.0.0",
+    "request": "^2.79.0"
   },
   "keywords": [
     "image",
@@ -62,8 +35,5 @@
   "gypfile": true,
   "bugs": {
     "url": "https://github.com/zhangyuanwei/node-images/issues"
-  },
-  "devDependencies": {
-    "step": "0.0.5"
   }
 }
