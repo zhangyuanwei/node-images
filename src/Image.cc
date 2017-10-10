@@ -28,19 +28,13 @@
 
 #include "Image.h"
 #include "Resize.h"
+#include "Rotate.h"
 #include <node_buffer.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <iostream>
-#include <math.h>
-#define PI 3.141592 
-
-int max(int a,int b)
-{
-    return a>b?a:b;
-}
 
 using v8::Isolate;
 using v8::FunctionCallbackInfo;
@@ -844,61 +838,11 @@ ImageState PixelArray::Rotate(size_t deg){
         }
 
         pixels = &newArray;
-
-        float rad=deg*(PI/180);  
-        float cos_rad = cos(rad);
-        float sin_rad = sin(rad);
-
-        int nWidth=this->width;  
-        int nHeight=this->height;  
-      
-        int SrcX1=-nWidth/2;  
-        int SrcY1=nHeight/2;  
-        int SrcX2=nWidth/2;  
-        int SrcY2=nHeight/2;  
-        int SrcX3=nWidth/2;  
-        int SrcY3=-nHeight/2;  
-        int SrcX4=-nWidth/2;  
-        int SrcY4=-nHeight/2;  
-      
-        int DstX1=(int)((cos_rad*SrcX1+sin_rad*SrcY1)+0.5);  
-        int DstY1=(int)((-sin_rad*SrcX1+cos_rad*SrcY1)+0.5);  
-        int DstX2=(int)((cos_rad*SrcX2+sin_rad*SrcY2)+0.5);  
-        int DstY2=(int)((-sin_rad*SrcX2+cos_rad*SrcY2)+0.5);  
-        int DstX3=(int)((cos_rad*SrcX3+sin_rad*SrcY3)+0.5);  
-        int DstY3=(int)((-sin_rad*SrcX3+cos_rad*SrcY3)+0.5);  
-        int DstX4=(int)((cos_rad*SrcX4+sin_rad*SrcY4)+0.5);  
-        int DstY4=(int)((-sin_rad*SrcX4+cos_rad*SrcY4)+0.5);  
-      
-        int DstWidth=max(abs(DstX1-DstX3),abs(DstX2-DstX4))+1;  
-        int DstHeight=max(abs(DstY1-DstY3),abs(DstY2-DstY4))+1;  
-      
-        if(pixels->Malloc(DstWidth, DstHeight) != SUCCESS){
-            return FAIL;
-        }
         pixels->type = type;
         
-        float VarX=(float)(-DstWidth*cos_rad/2.0f-DstHeight*sin_rad/2.0f+nWidth/2.0f);  
-        float VarY=(float)(DstWidth*sin_rad/2.0f-DstHeight*cos_rad/2.0f+nHeight/2.0f);  
-      
-        for(int i=0;i<DstHeight;i++) {
-            // i,j为现在的图的坐标  
-            float sin_rad_i = sin_rad*i+VarX;
-            float cos_rad_i = cos_rad*i+VarY;
-            for(int j=0;j<DstWidth;j++) {  
-                int x=(int)(cos_rad*j+sin_rad_i); //x，y为原来图中的像素坐标  
-                int y=(int)(-sin_rad*j+cos_rad_i);  
-                if(x>=nWidth||x<0||y>=nHeight||y<0) {  
-                    pixels->data[i][j].R = 255;
-                    pixels->data[i][j].G = 255;
-                    pixels->data[i][j].B = 255;
-                    pixels->data[i][j].A = 0;
-                }  
-                else {  
-                    pixels->data[i][j] = this->data[y][x];
-                }  
-            }  
-        }     
+        if(rotate( this, pixels, deg) != SUCCESS){
+            return FAIL;
+        }
 
         Free();
         *this = *pixels;
