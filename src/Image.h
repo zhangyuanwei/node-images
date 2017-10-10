@@ -89,6 +89,8 @@ typedef struct PixelArray {
     ImageState SetHeight(size_t h);
 
     ImageState Resize(size_t w, size_t h, const char *filter);
+    
+    ImageState Rotate(size_t deg);
 
     void DetectTransparent();
 } PixelArray;
@@ -195,6 +197,8 @@ class Image : public node::ObjectWrap {
 
         static void Resize(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+        static void Rotate(const v8::FunctionCallbackInfo<v8::Value> &args);
+        
         static void FillColor(const v8::FunctionCallbackInfo<v8::Value> &args);
 
         static void LoadFromBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
