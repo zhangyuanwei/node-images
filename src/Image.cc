@@ -28,14 +28,13 @@
 
 #include "Image.h"
 #include "Resize.h"
+#include "Rotate.h"
 #include <node_buffer.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <iostream>
-
-
 
 using v8::Isolate;
 using v8::FunctionCallbackInfo;
@@ -99,6 +98,7 @@ void Image::Init(Local<Object> exports) { // {{{
     Local<ObjectTemplate> proto = tpl->PrototypeTemplate();
 
     NODE_SET_PROTOTYPE_METHOD(tpl, "resize", Resize);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "rotate", Rotate);
     NODE_SET_PROTOTYPE_METHOD(tpl, "fillColor", FillColor);
     NODE_SET_PROTOTYPE_METHOD(tpl, "loadFromBuffer", LoadFromBuffer);
     NODE_SET_PROTOTYPE_METHOD(tpl, "copyFromImage", CopyFromImage);
@@ -253,7 +253,24 @@ void Image::Resize(const FunctionCallbackInfo<Value> &args) {
     args.GetReturnValue().Set(v8::Undefined(args.GetIsolate()));
 }
 
+/**
+ * Rotate image.
+ * @since 1.5.5+
+ */
+void Image::Rotate(const FunctionCallbackInfo<Value> &args) {
 
+    char *filter = NULL;
+
+    if( !args[0]->IsNull() && !args[0]->IsUndefined () && !args[0]->IsNumber() ) {
+        THROW_INVALID_ARGUMENTS_ERROR("Arguments error");
+        return;
+    }
+
+    Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
+    img->pixels->Rotate(args[0]->ToNumber()->Value());
+
+    args.GetReturnValue().Set(v8::Undefined(args.GetIsolate()));
+}
 
 void Image::GetTransparent(Local<String> property, const PropertyCallbackInfo<Value> &args) { // {{{
     Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
@@ -805,6 +822,30 @@ ImageState PixelArray::Resize(size_t w, size_t h, const char *filter){
         *this = *pixels;
 
         // printf( "%d, %d, %d\n", this->data[122][267].R, this->data[122][267].G, this->data[122][267].B);
+    }
+    return SUCCESS;
+}
+
+ImageState PixelArray::Rotate(size_t deg){
+    PixelArray newArray, *pixels;
+    size_t w,h;
+    
+    deg = deg % 360;
+
+    if(data != NULL){
+        if(deg==0){
+            return SUCCESS;
+        }
+
+        pixels = &newArray;
+        pixels->type = type;
+        
+        if(rotate( this, pixels, deg) != SUCCESS){
+            return FAIL;
+        }
+
+        Free();
+        *this = *pixels;
     }
     return SUCCESS;
 }

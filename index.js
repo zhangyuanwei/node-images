@@ -109,6 +109,10 @@ prototype = {
         this._handle.resize(width, height, filter);
         return this;
     },
+    rotate: function(deg) {
+        this._handle.rotate(deg);
+        return this;
+    },
 
     size: function(width, height) {
         var size;
