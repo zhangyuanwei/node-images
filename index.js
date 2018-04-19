@@ -207,10 +207,7 @@ CONFIG_GENERATOR[images.TYPE_JPEG] = function(config) {
 images.Image = WrappedImage;
 
 images.loadFromFile = function(file) {
-    if(!Buffer.isBuffer(file)){
-        file=fs.readFileSync(file);
-    }
-    return images.loadFromBuffer(file);
+    return images.loadFromBuffer(Buffer.isBuffer(file) ? file : fs.readFileSync(file));
 };
 
 images.createImage = function(width, height) {
