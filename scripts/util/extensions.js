@@ -76,6 +76,7 @@ function getHumanNodeVersion(abi) {
     case 53: return 'Electron 1.6.x';
     case 55: return 'Node.js 8.x';
     case 57: return 'Node.js 8.x';
+    case 64: return 'Node.js 10.x';
     default: return false;
   }
 }

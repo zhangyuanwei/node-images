@@ -41,7 +41,7 @@ module.exports.unsupportedEnvironment = function() {
 module.exports.missingBinary = function() {
   return [
     'Missing binding ' + extensions.getBinaryPath(),
-    pkg.name + 'could not find a binding for your current environment: ' + humanEnvironment(),
+    pkg.name + ' could not find a binding for your current environment: ' + humanEnvironment(),
     '',
     foundBinaries(),
     '',

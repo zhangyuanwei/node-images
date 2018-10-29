@@ -29,8 +29,9 @@
 #ifndef __NODE_IMAGE_H__
 #define __NODE_IMAGE_H__
 
-#include <node.h>
-#include <node_object_wrap.h>
+#include <node_api.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 typedef enum {
     TYPE_PNG = 1,
@@ -149,65 +150,63 @@ IMAGE_CODEC(Raw);
 IMAGE_CODEC(Webp);
 #endif
 
-class Image : public node::ObjectWrap {
+class Image {
     public:
 
-        static v8::Persistent<v8::Function> constructor;
-
-        static void Init(v8::Local<v8::Object> exports);
+        // static v8::Persistent<v8::Function> constructor;
+        static napi_ref constructor;
+        // static void Init(v8::Local<v8::Object> exports);
+        static napi_value Init(napi_env env, napi_value exports);
+        static void Destructor(napi_env env, void* nativeObject, void* finalize_hint);
+        static napi_value New(napi_env env, napi_callback_info info);
 
         // Error Handle
-        static ImageState setError(const char *err);
+        static void setError(const char *err);
 
-        static v8::Local<v8::Value> getError();
+        static napi_value getError(napi_env, napi_callback_info info);
 
         static bool isError();
 
         // Size Limit
         static size_t maxWidth, maxHeight;
 
-        static void GetMaxWidth(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
+        static napi_value GetMaxWidth(napi_env env, napi_callback_info info);
+        static napi_value SetMaxWidth(napi_env env, napi_callback_info info);
 
-        static void SetMaxWidth(v8::Local<v8::String>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<void> &args);
-
-        static void GetMaxHeight(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
-
-        static void SetMaxHeight(v8::Local<v8::String>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<void> &args);
+        static napi_value GetMaxHeight(napi_env env, napi_callback_info info);
+        static napi_value SetMaxHeight(napi_env env, napi_callback_info info);
 
         // Memory
         static size_t usedMemory;
 
-        static void GetUsedMemory(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
-
-        static void GC(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static napi_value GetUsedMemory(napi_env env, napi_callback_info info);
+        static napi_value GC(napi_env env, napi_callback_info info);
 
         // Image constructor
-        static void New(const v8::FunctionCallbackInfo<v8::Value> &args);
+        // static void New(const v8::FunctionCallbackInfo<v8::Value> &args);
 
         // Image.prototype
-        static void GetWidth(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
+        static napi_value GetWidth(napi_env env, napi_callback_info info);
+        static napi_value SetWidth(napi_env env, napi_callback_info info);
 
-        static void SetWidth(v8::Local<v8::String>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<void> &args);
+        static napi_value GetHeight(napi_env env, napi_callback_info info);
+        static napi_value SetHeight(napi_env env, napi_callback_info info);
 
-        static void GetHeight(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
+        static napi_value GetTransparent(napi_env env, napi_callback_info info);
 
-        static void SetHeight(v8::Local<v8::String>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<void> &args);
+        static napi_value Resize(napi_env env, napi_callback_info info);
 
-        static void GetTransparent(v8::Local<v8::String>, const v8::PropertyCallbackInfo<v8::Value> &args);
-
-        static void Resize(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-        static void Rotate(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static napi_value Rotate(napi_env env, napi_callback_info infos);
         
-        static void FillColor(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static napi_value FillColor(napi_env env, napi_callback_info info);
 
-        static void LoadFromBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static napi_value LoadFromBuffer(napi_env env, napi_callback_info info);
 
-        static void ToBuffer(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static napi_value ToBuffer(napi_env env, napi_callback_info info);
 
-        static void CopyFromImage(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static napi_value CopyFromImage(napi_env env, napi_callback_info info);
 
-        static void DrawImage(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static napi_value DrawImage(napi_env env, napi_callback_info info);
 
     private:
         static const char *error;
@@ -244,6 +243,10 @@ class Image : public node::ObjectWrap {
         Image();
 
         ~Image();
+
+        // napi env & wrapper
+        napi_env env_;
+        napi_ref wrapper_;
 };
 
 #endif

@@ -31,6 +31,7 @@
 #include "Rotate.h"
 #include <node_buffer.h>
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -55,13 +56,38 @@ using v8::Object;
 //#define SET_ERROR_FILE_LINE(file, line, msg) Image::SetError( file #line msg)
 //#define SET_ERROR(msg) SET_ERROR_FILE_LINE(__FILE__, __LINE__, meg)
 
+#define DECLARE_NAPI_METHOD(name, func)                                                             \
+  { name, 0, func, 0, 0, 0, napi_default, 0 }
+#define DECLARE_NAPI_ACCESSOR(name, get, set)                                                       \
+  { name, 0, 0, get, set, 0, napi_default, 0 }
+#define DEFINE_NAPI_CONSTANT(name, value)                                                           \
+  do {                                                                                              \
+    napi_value _define_value;                                                                       \
+    napi_status _define_status;                                                                     \
+    _define_status = napi_create_uint32(env, value, &_define_value);                                \
+    assert(_define_status == napi_ok);                                                              \
+    _define_status = napi_set_named_property(env, exports, name, _define_value);                    \
+    assert(_define_status == napi_ok);                                                              \
+  } while(0);
+
+#define GET_VALUE_WITH_NAPI_FUNC(func, arg, valueRef)                                               \
+    do {                                                                                            \
+        napi_valuetype valuetype;                                                                   \
+        status = napi_typeof(env, arg, &valuetype);                                                 \
+        assert(status == napi_ok);                                                                  \
+        if (valuetype != napi_undefined) {                                                          \
+            status = func(env, arg, (uint32_t*) valueRef);                                 \
+            assert(status == napi_ok);                                                              \
+        }                                                                                           \
+    } while(0);                                                                                     \
+
 #define STRINGFY(n) #n
 #define MERGE_FILE_LINE(file, line, msg) ( file ":" STRINGFY(line) " " msg)
 #define FILE_LINE(msg) MERGE_FILE_LINE(__FILE__, __LINE__, msg)
-#define ERROR(type, msg) Exception::type(String::NewFromUtf8( Isolate::GetCurrent(), msg ))
-#define THROW(err) Isolate::GetCurrent()->ThrowException(err)
+#define ERROR(type, msg) 
+#define THROW(err) 
 #define SET_ERROR(msg) (Image::setError(FILE_LINE(msg)))
-#define GET_ERROR() (Image::getError())
+#define GET_ERROR() (Image::getError(env, info))
 #define THROW_ERROR(msg) THROW(ERROR(Error,FILE_LINE(msg)))
 #define THROW_GET_ERROR() THROW(GET_ERROR())
 
@@ -74,7 +100,37 @@ using v8::Object;
 #define AdjustAmountOfExternalAllocatedMemory(bc) static_cast<int>( \
         v8::Isolate::GetCurrent()->AdjustAmountOfExternalAllocatedMemory(bc));
 
-Persistent<Function> Image::constructor;
+// Persistent<Function> Image::constructor;
+
+
+Image::Image(): env_(nullptr), wrapper_(nullptr) {
+    size_t size;
+    pixels = (PixelArray *) malloc(sizeof(PixelArray));
+    pixels->width = pixels->height = 0;
+    pixels->type = EMPTY;
+    pixels->data = NULL;
+    size = sizeof(PixelArray) + sizeof(Image);
+    AdjustAmountOfExternalAllocatedMemory(size);
+    usedMemory += size;
+}
+
+Image::~Image() { 
+    napi_delete_reference(env_, wrapper_);
+
+    int32_t size;
+    size = sizeof(PixelArray) + sizeof(Image);
+    pixels->Free();
+    free(pixels);
+    AdjustAmountOfExternalAllocatedMemory(-size);
+    
+    usedMemory -= size;
+}
+
+void Image::Destructor(napi_env env, void* nativeObejct, void*) {
+    reinterpret_cast<Image*>(nativeObejct)->~Image();
+}
+
+napi_ref Image::constructor;
 
 //size_t Image::survival;
 ImageCodec *Image::codecs;
@@ -83,59 +139,63 @@ size_t Image::maxWidth = DEFAULT_WIDTH_LIMIT;
 size_t Image::maxHeight = DEFAULT_HEIGHT_LIMIT;
 const char *Image::error = NULL;
 
-void Image::Init(Local<Object> exports) { // {{{
-    Isolate *isolate = exports->GetIsolate();
 
+napi_value Image::Init(napi_env env, napi_value exports) { // {{{
     regAllCodecs();
-    //survival = 0;
 
-    // Constructor
-    Local<FunctionTemplate> tpl = FunctionTemplate::New(isolate, New);
-    tpl->SetClassName(String::NewFromUtf8(isolate, "Image"));
-    tpl->InstanceTemplate()->SetInternalFieldCount(1);
+    napi_status status;
+    napi_property_descriptor properties[] = {
+        DECLARE_NAPI_ACCESSOR("width", GetWidth, SetWidth),
+        DECLARE_NAPI_ACCESSOR("height", GetHeight, SetHeight),
+        DECLARE_NAPI_ACCESSOR("transparent", GetTransparent, nullptr),
+        DECLARE_NAPI_ACCESSOR("maxWidth", GetMaxWidth, SetMaxWidth),
+        DECLARE_NAPI_ACCESSOR("maxHeight", GetMaxHeight, SetMaxHeight),
+        DECLARE_NAPI_ACCESSOR("usedMemory", GetUsedMemory, nullptr),
+        DECLARE_NAPI_METHOD("resize", Resize),
+        DECLARE_NAPI_METHOD("rotate", Rotate),
+        DECLARE_NAPI_METHOD("fillColor", FillColor),
+        DECLARE_NAPI_METHOD("loadFromBuffer", LoadFromBuffer),
+        DECLARE_NAPI_METHOD("copyFromImage", CopyFromImage),
+        DECLARE_NAPI_METHOD("drawImage", DrawImage),
+        DECLARE_NAPI_METHOD("toBuffer", ToBuffer),
+        DECLARE_NAPI_METHOD("gc", GC)
+    };
 
-    // Prototype
-    Local<ObjectTemplate> proto = tpl->PrototypeTemplate();
+    napi_value cons;
 
-    NODE_SET_PROTOTYPE_METHOD(tpl, "resize", Resize);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "rotate", Rotate);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "fillColor", FillColor);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "loadFromBuffer", LoadFromBuffer);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "copyFromImage", CopyFromImage);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "drawImage", DrawImage);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "toBuffer", ToBuffer);
+    status = napi_define_class(env, "Image", NAPI_AUTO_LENGTH, New, nullptr, 14, properties, &cons);
+    assert(status == napi_ok);
 
-    proto->SetAccessor(String::NewFromUtf8(isolate, "width"), GetWidth, SetWidth);
-    proto->SetAccessor(String::NewFromUtf8(isolate, "height"), GetHeight, SetHeight);
-    proto->SetAccessor(String::NewFromUtf8(isolate, "transparent"), GetTransparent);
+    status = napi_create_reference(env, cons, 1, &constructor);
+    assert(status == napi_ok);
 
-    constructor.Reset(isolate, tpl->GetFunction());
+    DEFINE_NAPI_CONSTANT("TYPE_PNG", TYPE_PNG);
+    DEFINE_NAPI_CONSTANT("TYPE_JPEG", TYPE_JPEG);
+    DEFINE_NAPI_CONSTANT("TYPE_GIF", TYPE_GIF);
+    DEFINE_NAPI_CONSTANT("TYPE_BMP", TYPE_BMP);
+    DEFINE_NAPI_CONSTANT("TYPE_RAW", TYPE_RAW);
+    DEFINE_NAPI_CONSTANT("TYPE_WEBP", TYPE_WEBP);
 
-    NODE_DEFINE_CONSTANT(exports, TYPE_PNG);
-    NODE_DEFINE_CONSTANT(exports, TYPE_JPEG);
-    NODE_DEFINE_CONSTANT(exports, TYPE_GIF);
-    NODE_DEFINE_CONSTANT(exports, TYPE_BMP);
-    NODE_DEFINE_CONSTANT(exports, TYPE_RAW);
-    NODE_DEFINE_CONSTANT(exports, TYPE_WEBP);
+    status = napi_set_named_property(env, exports, "Image", cons);
+    assert(status == napi_ok);
 
-
-    exports->SetAccessor(String::NewFromUtf8(isolate, "maxWidth"), GetMaxWidth, SetMaxWidth);
-    exports->SetAccessor(String::NewFromUtf8(isolate, "maxHeight"), GetMaxHeight, SetMaxHeight);
-    exports->SetAccessor(String::NewFromUtf8(isolate, "usedMemory"), GetUsedMemory);
-    NODE_SET_METHOD(exports, "gc", GC);
-
-    exports->Set(String::NewFromUtf8(isolate, "Image"), tpl->GetFunction());
-
+    return exports;
 } //}}}
 
-ImageState Image::setError(const char * err){ // {{{
+void Image::setError(const char * err){ // {{{
     error = err;
-    return FAIL;
 } // }}}
 
-Local<Value> Image::getError(){ // {{{
-    Local<Value> err = Exception::Error(String::NewFromUtf8(Isolate::GetCurrent(), error ? error : "Unknow Error"));
+napi_value Image::getError(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+    napi_value code, msg, err;
+
+    napi_create_uint32(env, 100000, &code);
+    napi_create_string_utf8(env, error ? error : "Unkonw Error", NAPI_AUTO_LENGTH, &msg);
+    napi_create_error(env, code, msg, &err);
+
     error = NULL;
+
     return err;
 } // }}}
 
@@ -143,87 +203,191 @@ bool Image::isError(){ // {{{
     return error != NULL;
 } // }}}
 
-void Image::GetMaxWidth(Local<String> property, const PropertyCallbackInfo<Value> &args) { // {{{
-    Isolate *isolate = args.GetIsolate();
-    args.GetReturnValue().Set(Number::New(isolate, maxWidth));
+napi_value Image::GetMaxWidth(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+    napi_value width;
+
+    status = napi_create_int32(env, maxWidth, &width);
+    assert(status == napi_ok);
+
+    return width;
 
 } // }}}
 
-void Image::SetMaxWidth(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void> &args) { // {{{
-    if(value->IsNumber())
-        maxWidth = value->Uint32Value();
+napi_value Image::SetMaxWidth(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+
+    size_t argc = 1;
+    napi_value value;
+    napi_value jsthis;
+
+    status = napi_get_cb_info(env, info, &argc, &value, &jsthis, nullptr);
+    assert(status == napi_ok);
+
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, value, &maxWidth);
+
+    return value;
 } // }}}
 
-void Image::GetMaxHeight(Local<String> property, const PropertyCallbackInfo<Value> &args) { // {{{
+napi_value Image::GetMaxHeight(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+    napi_value height;
 
+    status = napi_create_int32(env, maxHeight, &height);
+    assert(status == napi_ok);
+
+    return height;
 } // }}}
 
-void Image::SetMaxHeight(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void> &args) { // {{{
-    if(value->IsNumber())
-        maxHeight = value->Uint32Value();
+napi_value Image::SetMaxHeight(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+
+    size_t argc = 1;
+    napi_value value;
+    napi_value jsthis;
+
+    status = napi_get_cb_info(env, info, &argc, &value, &jsthis, nullptr);
+    assert(status == napi_ok);
+
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, value, &maxHeight);
+
+    return value;
 } // }}}
 
 // Memory
 size_t Image::usedMemory = 0;
 
-void Image::GetUsedMemory(Local<String> property, const PropertyCallbackInfo<Value>&args) { // {{{
-    Isolate *isolate = args.GetIsolate();
-    args.GetReturnValue().Set(Number::New(isolate, usedMemory));
+napi_value Image::GetUsedMemory(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+    napi_value value;
+
+    status = napi_create_int32(env, usedMemory, &value);
+    assert(status == napi_ok);
+
+    return value;
 } // }}}
 
-void Image::GC(const FunctionCallbackInfo <Value> &args) { // {{{
+napi_value Image::GC(napi_env env, napi_callback_info info) { // {{{
     //V8::LowMemoryNotification();
-    Isolate *isolate = args.GetIsolate();
-    args.GetReturnValue().Set(v8::Undefined(isolate));
+    napi_value undefined;
+    napi_get_undefined(env, &undefined);
+
+    return undefined;
 } // }}}
 
-void Image::New(const FunctionCallbackInfo<Value> &args) { // {{{
+napi_value Image::New(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+
+    napi_value target;
+    status = napi_get_new_target(env, info, &target);
+    assert(status == napi_ok);
+
+    bool is_constructor = target != nullptr;
+    if (is_constructor) {
+        size_t argc = 2;
+        napi_value args[2];
+        napi_value jsthis;
+
+        status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
+        assert(status == napi_ok);
+
+        size_t width, height;
+
+        GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &width);
+        GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &height);
+
+        Image *img = new Image();
+
+        if (img->pixels->Malloc(width, height) != SUCCESS) {
+            THROW_GET_ERROR();
+        }
+
+        img->env_ = env;
+        status = napi_wrap(env, jsthis, reinterpret_cast<void**>(img), Image::Destructor, nullptr, &img->wrapper_);
+        assert(status == napi_ok);
+
+        return jsthis;
+    } else {
+        // @TODO
+        return nullptr;
+    }
+} // }}}
+
+napi_value Image::GetWidth(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+    napi_value jsthis;
+
+    status = napi_get_cb_info(env, info, nullptr, nullptr, &jsthis, nullptr);
+    assert(status == napi_ok);
 
     Image *img;
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    assert(status == napi_ok);
 
-    size_t width, height;
+    napi_value value;
+    status = napi_create_int32(env, img->pixels->width, &value);
+    assert(status == napi_ok);
 
-    width = height = 0;
-
-    if(args[0]->IsNumber()) width = args[0]->Uint32Value();
-    if(args[1]->IsNumber()) height = args[1]->Uint32Value();
-
-    img = new Image();
-
-    if(img->pixels->Malloc(width, height) != SUCCESS) {
-        THROW_GET_ERROR();
-    }
-
-    img->Wrap(args.This());
-
-    args.GetReturnValue().Set(args.This());
+    return value;
 } // }}}
 
-void Image::GetWidth(Local<String> property, const PropertyCallbackInfo<Value> &args) { // {{{
-    Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
-    Isolate *isolate = args.GetIsolate();
-    args.GetReturnValue().Set(Number::New(isolate, img->pixels->width));
+napi_value Image::SetWidth(napi_env env, napi_callback_info info){ // {{{
+    napi_status status;
+
+    napi_value jsthis;
+    size_t argc = 1;
+    napi_value args[1];
+    status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
+
+    Image *img;
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    assert(status == napi_ok);
+
+    size_t value;
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &value);
+    img->pixels->width = value;
+
+    return jsthis;
 } // }}}
 
-void Image::SetWidth(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void> &args){ // {{{
-    if(value->IsNumber()){
-        Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
-        img->pixels->SetWidth(value->Uint32Value());
-    }
+napi_value Image::GetHeight(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+
+    napi_value jsthis;
+
+    status = napi_get_cb_info(env, info, nullptr, nullptr, &jsthis, nullptr);
+    assert(status == napi_ok);
+
+    Image *img;
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    assert(status == napi_ok);
+
+    napi_value value;
+    status = napi_create_int32(env, img->pixels->width, &value);
+    assert(status == napi_ok);
+
+    return value;
+
 } // }}}
 
-void Image::GetHeight(Local<String> property, const PropertyCallbackInfo<Value> &args) { // {{{
+napi_value Image::SetHeight(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
 
-    Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
-    args.GetReturnValue().Set(Number::New(args.GetIsolate(), img->pixels->height));
+    napi_value jsthis;
+    size_t argc = 1;
+    napi_value args[1];
+    status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
 
-} // }}}
+    Image *img;
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    assert(status == napi_ok);
 
-void Image::SetHeight(Local<String> property, Local<Value> value, const PropertyCallbackInfo<void> &args) { // {{{
-    if(value->IsNumber()){
-        Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
-        img->pixels->SetHeight(value->Uint32Value());
-    }
+    size_t value;
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &value);
+    img->pixels->height = value;
+
+    return jsthis;
+
 } // }}}
 
 
@@ -231,112 +395,177 @@ void Image::SetHeight(Local<String> property, Local<Value> value, const Property
  * Scale image with bicubic.
  * @since 1.5.5+
  */
-void Image::Resize(const FunctionCallbackInfo<Value> &args) {
+napi_value Image::Resize(napi_env env, napi_callback_info info) {
+    napi_status status;
 
-    char *filter = NULL;
+    napi_value jsthis;
+    napi_value value;
 
-    if( (!args[0]->IsNull() && !args[0]->IsUndefined () && !args[0]->IsNumber()) ||
-            (!args[1]->IsNull() && !args[1]->IsUndefined () && !args[1]->IsNumber()) ) {
-        THROW_INVALID_ARGUMENTS_ERROR("Arguments error");
-        return;
+    size_t argc;
+    napi_value args[3];
+
+    status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
+    assert(status == napi_ok);
+
+    size_t width, height;
+
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &width);
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &height);
+
+    char buf[128];
+    size_t result_length;
+
+    if (!args[2]) {
+        status = napi_get_value_string_utf8(env, args[2], buf, sizeof(buf), &result_length);
+        assert(status == napi_ok);
+        assert(result_length > 0);
     }
 
-    if ( args[2]->IsString() ) {
-        String::Utf8Value cstr(args[2]);
-        filter = new char[strlen(*cstr)+1];
-        strcpy(filter, *cstr);
-    }
+    Image *img;
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    assert(status == napi_ok);
 
-    Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
-    img->pixels->Resize(args[0]->ToNumber()->Value(), args[1]->ToNumber()->Value(), filter);
+    img->pixels->Resize(width, height, buf);
 
-    args.GetReturnValue().Set(v8::Undefined(args.GetIsolate()));
+    return jsthis;
 }
 
 /**
  * Rotate image.
  * @since 1.5.5+
  */
-void Image::Rotate(const FunctionCallbackInfo<Value> &args) {
+napi_value Image::Rotate(napi_env env, napi_callback_info info) {
 
-    char *filter = NULL;
+    napi_status status;
 
-    if( !args[0]->IsNull() && !args[0]->IsUndefined () && !args[0]->IsNumber() ) {
-        THROW_INVALID_ARGUMENTS_ERROR("Arguments error");
-        return;
-    }
+    napi_value jsthis;
 
-    Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
-    img->pixels->Rotate(args[0]->ToNumber()->Value());
+    size_t argc;
+    napi_value args[1];
 
-    args.GetReturnValue().Set(v8::Undefined(args.GetIsolate()));
-}
+    status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
+    assert(status == napi_ok);
 
-void Image::GetTransparent(Local<String> property, const PropertyCallbackInfo<Value> &args) { // {{{
-    Image *img = node::ObjectWrap::Unwrap<Image>(args.This());
-    args.GetReturnValue().Set(Number::New(args.GetIsolate(), img->pixels->type));
-} // }}}
-
-void Image::FillColor(const FunctionCallbackInfo<Value> &args) { // {{{
+    size_t rotate;
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &rotate);
 
     Image *img;
-    Pixel color, *cp;
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    assert(status == napi_ok);
 
-    if(!args[0]->IsNumber()
-            || !args[1]->IsNumber()
-            || !args[2]->IsNumber()) {
-        THROW_INVALID_ARGUMENTS_ERROR("");
-        return;
-    }
+    img->pixels->Rotate(rotate);
+    
+    return jsthis;
+}
 
-    cp = &color;
-    cp->R = args[0]->Uint32Value();
-    cp->G = args[1]->Uint32Value();
-    cp->B = args[2]->Uint32Value();
-    cp->A = 0xFF;
+napi_value Image::GetTransparent(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
 
-    if(args[3]->IsNumber()){
-        cp->A = (uint8_t) (args[3]->NumberValue() * 0xFF);
-    }
+    napi_value jsthis;
 
-    img = node::ObjectWrap::Unwrap<Image>(args.This());
-    img->pixels->Fill(cp);
+    status = napi_get_cb_info(env, info, nullptr, nullptr, &jsthis, nullptr);
+    assert(status == napi_ok);
 
-    args.GetReturnValue().Set(v8::Undefined(args.GetIsolate()));
+    Image *img;
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    assert(status == napi_ok);
+
+    napi_value value;
+    status = napi_create_int32(env, img->pixels->type, &value);
+    assert(status == napi_ok);
+
+    return value;
 } // }}}
 
-void Image::LoadFromBuffer(const FunctionCallbackInfo<Value> &args) { // {{{
+napi_value Image::FillColor(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+
+    napi_value jsthis;
+    napi_value value;
+
+    size_t argc;
+    napi_value args[4];
+
+    status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
+    assert(status == napi_ok);
+
+    size_t r, g, b, a;
+
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &r);
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &g);
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[2], &b);
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[3], &a);
+
+
+    Pixel color, *cp;
+
+    cp = &color;
+    cp->R = r;
+    cp->G = g;
+    cp->B = b;
+    cp->A = 0xFF;
+
+    if (a > 0) {
+        cp->A = (uint8_t) (a * 0xFF);
+    }
+    
+    Image *img;
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    assert(status == napi_ok);
+
+    img->pixels->Fill(cp);
+
+    return jsthis;
+} // }}}
+
+napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+
+    napi_value jsthis;
+    napi_value value;
+
+    size_t argc;
+    napi_value args[1];
+
+    status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
+    assert(status == napi_ok);
+
+    bool is_flag = false;
+
+    status = napi_is_buffer(env, args[0], &is_flag);
+    assert(status == napi_ok);
+
+    if (!is_flag) {
+        THROW_TYPE_ERROR(": first argument must be a buffer.");
+        assert(is_flag);
+    }
 
     Image *img;
 
     uint8_t *buffer;
-    unsigned start, end, length;
+    unsigned long start, end, length;
+
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    assert(status == napi_ok);
 
     ImageCodec *codec;
     ImageDecoder decoder;
     ImageData input_data, *input;
 
-    if(!node::Buffer::HasInstance(args[0])){
-        THROW_TYPE_ERROR(": first argument must be a buffer.");
-        return;
-    }
-
-    img = node::ObjectWrap::Unwrap<Image>(args.This());
-
-    buffer = (uint8_t *) node::Buffer::Data(args[0]);
-    length = (unsigned) node::Buffer::Length(args[0]);
+    status = napi_get_buffer_info(env, args[0], (void **) &buffer, (size_t *)&length);
+    assert(status == napi_ok);
 
     start = 0;
-    if(args[1]->IsNumber()){
-        start = args[1]->Uint32Value();
+    if (argc >= 2) {
+        GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &start);
     }
 
     end = length;
-    if(args[2]->IsNumber()){
-        end = args[2]->Uint32Value();
+    if (argc >= 3) {
+        GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[2], &end);
         if(end < start || end > length){
             THROW_TYPE_ERROR("");
-            return;
+            return nullptr;
         }
     }
 
@@ -346,80 +575,121 @@ void Image::LoadFromBuffer(const FunctionCallbackInfo<Value> &args) { // {{{
 
     img->pixels->Free();
     codec = codecs;
-    while(codec != NULL && !isError()){
+
+    while (codec != NULL && !isError()) {
         decoder = codec->decoder;
         input->position = 0;
-        if(decoder != NULL && decoder(img->pixels, input) == SUCCESS){
-            args.GetReturnValue().Set(v8::Undefined(args.GetIsolate()));
-            return;
+        if (decoder != NULL && decoder(img->pixels, input) == SUCCESS) {
+            return jsthis;
         }
         codec = codec->next;
     }
-    isError() ? (THROW_GET_ERROR()) : THROW_ERROR("Unknow format");
-    return;
+
+    // isError() ? (THROW_GET_ERROR()) : THROW_ERROR("Unknow format");
+    return jsthis;
 } // }}}
 
-void Image::CopyFromImage(const FunctionCallbackInfo<Value> &args) { // {{{
+napi_value Image::CopyFromImage(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+
+    napi_value jsthis;
+
+    size_t argc;
+    napi_value args[4];
+
+    status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
+    assert(status == napi_ok);
 
     Image *src, *dst;
     uint32_t x, y, w, h;
 
-    Local<Object> obj = args[0]->ToObject();
+    // @TODO
 
-    //@TODO
+    if (argc == 0) {
+        return nullptr;
+    }
+    
+    napi_value obj;
+    status = napi_coerce_to_object(env, args[0], &obj);
+    assert(status == napi_ok);
 
-    src = node::ObjectWrap::Unwrap<Image>(obj);
-    dst = node::ObjectWrap::Unwrap<Image>(args.This());
+    status = napi_unwrap(env, obj, reinterpret_cast<void **>(&src));
+    assert(status == napi_ok);
+
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&dst));
+    assert(status == napi_ok);
 
     x = y = 0;
     w = src->pixels->width;
     h = src->pixels->height;
 
-    if(args[1]->IsNumber()   // x
-            && args[2]->IsNumber()){ // y
-        x = args[1]->Uint32Value();
-        y = args[2]->Uint32Value();
+    if (argc == 3) {
+        GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &x);
+        GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[2], &y);
     }
 
-    if(args[3]->IsNumber()   // w
-            && args[4]->IsNumber()){ // h
-        w = args[3]->Uint32Value();
-        h = args[4]->Uint32Value();
+    if(argc == 5) {
+        GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[3], &w);
+        GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[4], &h);
     }
 
     if(dst->pixels->CopyFrom(src->pixels, x, y, w, h) != SUCCESS){
         THROW_GET_ERROR();
     }
 
+    return nullptr;
 }// }}}
 
-void Image::DrawImage(const FunctionCallbackInfo<Value> &args) { // {{{
+napi_value Image::DrawImage(napi_env env, napi_callback_info info) { // {{{
+    napi_status status;
+
+    napi_value jsthis;
+
+    size_t argc;
+    napi_value args[4];
+
+    status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
+    assert(status == napi_ok);
+
+    if (argc == 0) {
+        return nullptr;
+    }
 
     Image *src, *dst;
     size_t x, y;
 
-    Local<Object> obj = args[0]->ToObject();
-
-    //if(!NanHasInstance(Image::constructor, obj)
-    //   || !args[1]->IsNumber() // x
-    //   || !args[2]->IsNumber()) // y
-    if (!args[1]->IsNumber() || !args[2]->IsNumber()) {
-        THROW_INVALID_ARGUMENTS_ERROR("");
-        return;
+    if (argc < 3) {
+        // @TODO
+        return nullptr;
     }
 
-    src = node::ObjectWrap::Unwrap<Image>(obj);
-    dst = node::ObjectWrap::Unwrap<Image>(args.This());
+    napi_value obj;
+    status = napi_coerce_to_object(env, args[0], &obj);
+    assert(status == napi_ok);
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &x);
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &y);
 
-    x = args[1]->Uint32Value();
-    y = args[2]->Uint32Value();
+    status = napi_unwrap(env, obj, reinterpret_cast<void **>(&src));
+    assert(status == napi_ok);
+
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&dst));
+    assert(status == napi_ok);
 
     dst->pixels->Draw(src->pixels, x, y);
 
-    args.GetReturnValue().Set(v8::Undefined(args.GetIsolate()));
+    return jsthis;
 } // }}}
 
-void Image::ToBuffer(const FunctionCallbackInfo<Value> &args) { //{{{
+napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
+    napi_status status;
+
+    napi_value jsthis;
+
+    size_t argc;
+    napi_value args[4];
+
+    status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
+    assert(status == napi_ok);
 
     Image *img;
     ImageType type;
@@ -434,20 +704,40 @@ void Image::ToBuffer(const FunctionCallbackInfo<Value> &args) { //{{{
 
     int length;
 
-    if(!args[0]->IsNumber()) {
+    if (argc == 0) {
         THROW_INVALID_ARGUMENTS_ERROR("");
-        return;
+        return nullptr;
     }
 
-    type = (ImageType) args[0]->Uint32Value();
+    size_t result = -1;
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], (int *) &result);
+
+    type = (ImageType) result;
     config = NULL;
-    if(node::Buffer::HasInstance(args[1])){
+
+    bool is_flag = false;
+
+    status = napi_is_buffer(env, args[1], &is_flag);
+    assert(status == napi_ok);
+
+    if (is_flag) {
+        char* buffer;
+        unsigned length;
+        
+        status = napi_get_buffer_info(env, args[1], (void **)&buffer, (size_t *)&length);
+        assert(status == napi_ok);
+
         config = &_config;
-        config->data = node::Buffer::Data(args[1]->ToObject());
-        config->length = node::Buffer::Length(args[1]->ToObject());
+        config->data = buffer;
+        config->length = length;
+    } else {
+        // @TODO
+        assert(is_flag);
     }
 
-    img = node::ObjectWrap::Unwrap<Image>(args.This());
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    assert(status == napi_ok);
+
     pixels = img->pixels;
 
     if(pixels->data != NULL){
@@ -457,35 +747,41 @@ void Image::ToBuffer(const FunctionCallbackInfo<Value> &args) { //{{{
         output->length = 0;
         output->position = 0;
 
-        while(codec != NULL && !isError()){
-            if(codec->type == type){
+        while (codec != NULL && !isError()) {
+            if (codec->type == type) {
                 encoder = codec->encoder;
-                if(encoder != NULL){
-                    if(encoder(pixels, output, config) == SUCCESS){
+                if (encoder != NULL) {
+                    if (encoder(pixels, output, config) == SUCCESS) {
                         length = output->position;
-                        MaybeLocal<Object> maybeBuffer = node::Buffer::New(args.GetIsolate(), (size_t) length);
-                        maybeBuffer.ToLocal(&buffer);
-                        memcpy(node::Buffer::Data(buffer), output->data, length);
+
+                        // MaybeLocal<Object> maybeBuffer = node::Buffer::New(args.GetIsolate(), (size_t) length);
+                        // maybeBuffer.ToLocal(&buffer);
+                        // memcpy(node::Buffer::Data(buffer), output->data, length);
+                        // 
+                        // args.GetReturnValue().Set(buffer);
+                        napi_value result_buffer;
+                        status = napi_create_buffer(env, length, (void **)&output->data, &result_buffer);
+                        assert(status == napi_ok);
+
                         free(output->data);
-                        args.GetReturnValue().Set(buffer);
-                        return;
-                    }else{
-                        if(output->data != NULL)
+                        return result_buffer;
+                    } else {
+                        if (output->data != NULL)
                             free(output->data);
                         THROW_ERROR("Encode fail.");
-                        return;
+                        return nullptr;
                     }
-                }else{
+                } else {
                     THROW_ERROR("Can't encode to this format.");
                 }
             }
             codec = codec->next;
         }
-        isError() ? (THROW_GET_ERROR()) : (THROW_ERROR("Unsupported type."));
-        return;
+        // isError() ? (THROW_GET_ERROR()) : (THROW_ERROR("Unsupported type."));
+        return nullptr;
     }else{
-        THROW_ERROR("Image uninitialized.");
-        return;
+        // THROW_ERROR("Image uninitialized.");
+        return nullptr;
     }
 
 } // }}}
@@ -500,28 +796,6 @@ void Image::regCodec(ImageDecoder decoder, ImageEncoder encoder, ImageType type)
     codecs = codec;
 } // }}}
 
-Image::Image(){ // {{{
-    size_t size;
-    pixels = (PixelArray *) malloc(sizeof(PixelArray));
-    pixels->width = pixels->height = 0;
-    pixels->type = EMPTY;
-    pixels->data = NULL;
-    size = sizeof(PixelArray) + sizeof(Image);
-    AdjustAmountOfExternalAllocatedMemory(size);
-    usedMemory += size;
-    //survival++;
-} // }}}
-
-Image::~Image(){ // {{{
-    int32_t size;
-    size = sizeof(PixelArray) + sizeof(Image);
-    pixels->Free();
-    free(pixels);
-    AdjustAmountOfExternalAllocatedMemory(-size);
-    usedMemory -= size;
-    //survival--;
-    //printf("survival:%d\n", survival);
-} // }}}
 
 void Pixel::Merge(Pixel *pixel){ // {{{
     double a, af, ab;
@@ -759,7 +1033,8 @@ ImageState PixelArray::SetHeight(size_t h){ // {{{
     if(data != NULL){
 
         if(h > Image::maxHeight){
-            return SET_ERROR("Beyond the height limit.");
+            SET_ERROR("Beyond the height limit.");
+            return FAIL;
         }
 
         if(h == height){
@@ -799,11 +1074,13 @@ ImageState PixelArray::Resize(size_t w, size_t h, const char *filter){
 
     if(data != NULL){
         if(w > Image::maxWidth){
-            return SET_ERROR("Beyond the width limit.");
+            SET_ERROR("Beyond the width limit.");
+            return FAIL;
         }
 
         if(h > Image::maxHeight){
-            return SET_ERROR("Beyond the height limit.");
+            SET_ERROR("Beyond the height limit.");
+            return FAIL;
         }
 
         if(w == width && h == height){
@@ -882,13 +1159,13 @@ void PixelArray::DetectTransparent(){ // {{{
     type = opaque ? SOLID : EMPTY;
 } // }}}
 
-extern "C" {
-void InitAll (Local<Object> exports) { // {{{
-    Image::Init(exports);
+extern "C" { // {{{
+    napi_value Init(napi_env env, napi_value exports) {
+      return Image::Init(env, exports);
+    }
 } // }}}
-}
 
 
-NODE_MODULE(binding, InitAll);
+NAPI_MODULE(NODE_GYP_MODULE_NAME, Init);
 
 // vim600: sw=4 ts=4 fdm=marker syn=cpp
