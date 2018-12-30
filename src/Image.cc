@@ -87,7 +87,7 @@ using v8::Object;
 #define STRINGFY(n) #n
 #define MERGE_FILE_LINE(file, line, msg) ( file ":" STRINGFY(line) " " msg)
 #define FILE_LINE(msg) MERGE_FILE_LINE(__FILE__, __LINE__, msg)
-#define ERROR(type, msg) napi_throw_#type(env, 10000, msg)
+#define ERROR(type, msg) napi_throw_error(env, "50000", msg)
 #define THROW(err)  napi_throw(env, err)
 #define SET_ERROR(msg) (Image::setError(FILE_LINE(msg)))
 #define GET_ERROR() (Image::getError(env, info))
@@ -223,12 +223,11 @@ napi_value Image::SetMaxWidth(napi_env env, napi_callback_info info) { // {{{
     size_t argc = 1;
     napi_value value;
     napi_value jsthis;
-    uint32_t maxWidth;
 
     status = napi_get_cb_info(env, info, &argc, &value, &jsthis, nullptr);
     assert(status == napi_ok);
 
-    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, value, &maxWidth);
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, value, (uint32_t *) &maxWidth);
 
     return value;
 } // }}}
@@ -422,10 +421,14 @@ napi_value Image::Resize(napi_env env, napi_callback_info info) {
     char buf[128];
     size_t result_length;
 
-    if (!args[2]) {
-        status = napi_get_value_string_utf8(env, args[2], buf, sizeof(buf), &result_length);
-        assert(status == napi_ok);
-        assert(result_length > 0);
+    if (args[2]) {
+        napi_valuetype typ;
+        napi_typeof(env, args[2], &typ);
+        if (typ == napi_string) {
+            status = napi_get_value_string_utf8(env, args[2], buf, sizeof(buf), &result_length);
+            assert(status == napi_ok);
+            assert(result_length > 0);
+        }
     }
 
     Image *img;
@@ -434,7 +437,7 @@ napi_value Image::Resize(napi_env env, napi_callback_info info) {
 
     img->pixels->Resize(width, height, buf);
 
-    return jsthis;
+    return nullptr;
 }
 
 /**
@@ -496,7 +499,7 @@ napi_value Image::FillColor(napi_env env, napi_callback_info info) { // {{{
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
 
-    uint32_t r, g, b, a;
+    uint32_t r, g, b, a = 0;
 
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &r);
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &g);
@@ -608,7 +611,7 @@ napi_value Image::CopyFromImage(napi_env env, napi_callback_info info) { // {{{
     assert(status == napi_ok);
 
     Image *src, *dst;
-    uint32_t x, y, w, h;
+    uint32_t x, y, w, h = 0;
 
     // @TODO
 
@@ -662,8 +665,8 @@ napi_value Image::DrawImage(napi_env env, napi_callback_info info) { // {{{
         return nullptr;
     }
 
-    Image *src, *dst;
-    uint32_t x, y;
+    Image *src, *dst = nullptr;
+    uint32_t x, y = 0;
 
     if (argc < 3) {
         // @TODO
@@ -692,8 +695,8 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
 
     napi_value jsthis;
 
-    size_t argc = 4;
-    napi_value args[4] = {nullptr};
+    size_t argc = 2;
+    napi_value args[2] = {nullptr};
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -709,7 +712,7 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
 
     Local<Object> buffer;
 
-    int length;
+    int length = 0;
 
     if (argc == 0) {
         THROW_INVALID_ARGUMENTS_ERROR("");
@@ -737,9 +740,6 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
         config = &_config;
         config->data = buffer;
         config->length = length;
-    } else {
-        // @TODO
-        //assert(is_flag);
     }
 
     status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
@@ -767,7 +767,7 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
                         // 
                         // args.GetReturnValue().Set(buffer);
                         napi_value result_buffer;
-                        status = napi_create_buffer(env, length, (void **)&output->data, &result_buffer);
+                        status = napi_create_buffer_copy(env, length, output->data, nullptr, &result_buffer);
                         assert(status == napi_ok);
 
                         free(output->data);
@@ -787,7 +787,7 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
         isError() ? (THROW_GET_ERROR()) : (THROW_ERROR("Unsupported type."));
         return nullptr;
     }else{
-        // THROW_ERROR("Image uninitialized.");
+        THROW_ERROR("Image uninitialized.");
         return nullptr;
     }
 

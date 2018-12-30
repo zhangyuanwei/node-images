@@ -85,6 +85,7 @@ prototype = {
             config = type;
             type = undefined;
         }
+
         fs.writeFileSync(file, this.encode(type || path.extname(file), config));
     },
     saveAsync: function (file, type, config, callback) {
