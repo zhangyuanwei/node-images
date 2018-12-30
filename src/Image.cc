@@ -33,6 +33,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <iostream>
@@ -76,22 +77,24 @@ using v8::Object;
         status = napi_typeof(env, arg, &valuetype);                                                 \
         assert(status == napi_ok);                                                                  \
         if (valuetype != napi_undefined) {                                                          \
-            status = func(env, arg, (uint32_t*) valueRef);                                 \
+            status = func(env, arg, valueRef);                                 \
             assert(status == napi_ok);                                                              \
+        } else { \
+            printf("undefined\n"); \
         }                                                                                           \
     } while(0);                                                                                     \
 
 #define STRINGFY(n) #n
 #define MERGE_FILE_LINE(file, line, msg) ( file ":" STRINGFY(line) " " msg)
 #define FILE_LINE(msg) MERGE_FILE_LINE(__FILE__, __LINE__, msg)
-#define ERROR(type, msg) 
-#define THROW(err) 
+#define ERROR(type, msg) napi_throw_#type(env, 10000, msg)
+#define THROW(err)  napi_throw(env, err)
 #define SET_ERROR(msg) (Image::setError(FILE_LINE(msg)))
 #define GET_ERROR() (Image::getError(env, info))
-#define THROW_ERROR(msg) THROW(ERROR(Error,FILE_LINE(msg)))
+#define THROW_ERROR(msg) napi_throw_error(env, "50000", FILE_LINE(msg))
 #define THROW_GET_ERROR() THROW(GET_ERROR())
 
-#define THROW_TYPE_ERROR(msg) THROW(ERROR(TypeError, FILE_LINE(msg)))
+#define THROW_TYPE_ERROR(msg) napi_throw_type_error(env, "50010", msg)
 #define THROW_INVALID_ARGUMENTS_ERROR(msg) THROW_TYPE_ERROR("Invalid arguments" msg)
 
 #define DEFAULT_WIDTH_LIMIT  10240 // default limit 10000x10000
@@ -190,8 +193,8 @@ napi_value Image::getError(napi_env env, napi_callback_info info) { // {{{
     napi_status status;
     napi_value code, msg, err;
 
-    napi_create_uint32(env, 100000, &code);
-    napi_create_string_utf8(env, error ? error : "Unkonw Error", NAPI_AUTO_LENGTH, &msg);
+    napi_create_string_utf8(env, "50030", 6, &code);
+    napi_create_string_utf8(env, error ? error : "Unkonw Error", 1024, &msg);
     napi_create_error(env, code, msg, &err);
 
     error = NULL;
@@ -220,6 +223,7 @@ napi_value Image::SetMaxWidth(napi_env env, napi_callback_info info) { // {{{
     size_t argc = 1;
     napi_value value;
     napi_value jsthis;
+    uint32_t maxWidth;
 
     status = napi_get_cb_info(env, info, &argc, &value, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -245,6 +249,7 @@ napi_value Image::SetMaxHeight(napi_env env, napi_callback_info info) { // {{{
     size_t argc = 1;
     napi_value value;
     napi_value jsthis;
+    uint32_t maxHeight;
 
     status = napi_get_cb_info(env, info, &argc, &value, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -291,7 +296,8 @@ napi_value Image::New(napi_env env, napi_callback_info info) { // {{{
         status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
         assert(status == napi_ok);
 
-        size_t width, height;
+        uint32_t width, height;
+        width = height = 0;
 
         GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &width);
         GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &height);
@@ -300,10 +306,11 @@ napi_value Image::New(napi_env env, napi_callback_info info) { // {{{
 
         if (img->pixels->Malloc(width, height) != SUCCESS) {
             THROW_GET_ERROR();
+            return nullptr;
         }
 
         img->env_ = env;
-        status = napi_wrap(env, jsthis, reinterpret_cast<void**>(img), Image::Destructor, nullptr, &img->wrapper_);
+        status = napi_wrap(env, jsthis, reinterpret_cast<void*>(img), Image::Destructor, nullptr, &img->wrapper_);
         assert(status == napi_ok);
 
         return jsthis;
@@ -340,10 +347,10 @@ napi_value Image::SetWidth(napi_env env, napi_callback_info info){ // {{{
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
     assert(status == napi_ok);
 
-    size_t value;
+    uint32_t value;
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &value);
     img->pixels->width = value;
 
@@ -359,7 +366,7 @@ napi_value Image::GetHeight(napi_env env, napi_callback_info info) { // {{{
     assert(status == napi_ok);
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
     assert(status == napi_ok);
 
     napi_value value;
@@ -379,10 +386,10 @@ napi_value Image::SetHeight(napi_env env, napi_callback_info info) { // {{{
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
     assert(status == napi_ok);
 
-    size_t value;
+    uint32_t value;
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &value);
     img->pixels->height = value;
 
@@ -401,13 +408,13 @@ napi_value Image::Resize(napi_env env, napi_callback_info info) {
     napi_value jsthis;
     napi_value value;
 
-    size_t argc;
-    napi_value args[3];
+    size_t argc = 3;
+    napi_value args[3] = {nullptr};
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
 
-    size_t width, height;
+    uint32_t width = 0, height = 0;
 
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &width);
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &height);
@@ -422,7 +429,7 @@ napi_value Image::Resize(napi_env env, napi_callback_info info) {
     }
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
     assert(status == napi_ok);
 
     img->pixels->Resize(width, height, buf);
@@ -440,17 +447,17 @@ napi_value Image::Rotate(napi_env env, napi_callback_info info) {
 
     napi_value jsthis;
 
-    size_t argc;
+    size_t argc = 1;
     napi_value args[1];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
 
-    size_t rotate;
+    uint32_t rotate;
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &rotate);
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
     assert(status == napi_ok);
 
     img->pixels->Rotate(rotate);
@@ -467,7 +474,7 @@ napi_value Image::GetTransparent(napi_env env, napi_callback_info info) { // {{{
     assert(status == napi_ok);
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
     assert(status == napi_ok);
 
     napi_value value;
@@ -483,13 +490,13 @@ napi_value Image::FillColor(napi_env env, napi_callback_info info) { // {{{
     napi_value jsthis;
     napi_value value;
 
-    size_t argc;
+    size_t argc = 4;
     napi_value args[4];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
 
-    size_t r, g, b, a;
+    uint32_t r, g, b, a;
 
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &r);
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &g);
@@ -510,7 +517,7 @@ napi_value Image::FillColor(napi_env env, napi_callback_info info) { // {{{
     }
     
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
     assert(status == napi_ok);
 
     img->pixels->Fill(cp);
@@ -524,8 +531,8 @@ napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
     napi_value jsthis;
     napi_value value;
 
-    size_t argc;
-    napi_value args[1];
+    size_t argc = 3;
+    napi_value args[3];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -543,9 +550,9 @@ napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
     Image *img;
 
     uint8_t *buffer;
-    unsigned long start, end, length;
+    uint32_t start, end, length;
 
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
     assert(status == napi_ok);
 
     ImageCodec *codec;
@@ -556,7 +563,7 @@ napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
     assert(status == napi_ok);
 
     start = 0;
-    if (argc >= 2) {
+    if (argc >= 2) {          
         GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &start);
     }
 
@@ -585,7 +592,7 @@ napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
         codec = codec->next;
     }
 
-    // isError() ? (THROW_GET_ERROR()) : THROW_ERROR("Unknow format");
+    isError() ? (THROW_GET_ERROR()) : THROW_ERROR("Unknow format");
     return jsthis;
 } // }}}
 
@@ -594,7 +601,7 @@ napi_value Image::CopyFromImage(napi_env env, napi_callback_info info) { // {{{
 
     napi_value jsthis;
 
-    size_t argc;
+    size_t argc = 4;
     napi_value args[4];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
@@ -645,7 +652,7 @@ napi_value Image::DrawImage(napi_env env, napi_callback_info info) { // {{{
 
     napi_value jsthis;
 
-    size_t argc;
+    size_t argc = 4;
     napi_value args[4];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
@@ -656,7 +663,7 @@ napi_value Image::DrawImage(napi_env env, napi_callback_info info) { // {{{
     }
 
     Image *src, *dst;
-    size_t x, y;
+    uint32_t x, y;
 
     if (argc < 3) {
         // @TODO
@@ -685,8 +692,8 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
 
     napi_value jsthis;
 
-    size_t argc;
-    napi_value args[4];
+    size_t argc = 4;
+    napi_value args[4] = {nullptr};
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -709,8 +716,8 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
         return nullptr;
     }
 
-    size_t result = -1;
-    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], (int *) &result);
+    uint32_t result = 0;
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &result);
 
     type = (ImageType) result;
     config = NULL;
@@ -732,10 +739,10 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
         config->length = length;
     } else {
         // @TODO
-        assert(is_flag);
+        //assert(is_flag);
     }
 
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
     assert(status == napi_ok);
 
     pixels = img->pixels;
@@ -777,7 +784,7 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
             }
             codec = codec->next;
         }
-        // isError() ? (THROW_GET_ERROR()) : (THROW_ERROR("Unsupported type."));
+        isError() ? (THROW_GET_ERROR()) : (THROW_ERROR("Unsupported type."));
         return nullptr;
     }else{
         // THROW_ERROR("Image uninitialized.");
