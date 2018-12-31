@@ -418,16 +418,18 @@ napi_value Image::Resize(napi_env env, napi_callback_info info) {
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &width);
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &height);
 
-    char buf[128];
+    char *filter = nullptr;
     size_t result_length;
 
     if (args[2]) {
         napi_valuetype typ;
+        char buf[64] = {'\0'};
         napi_typeof(env, args[2], &typ);
         if (typ == napi_string) {
             status = napi_get_value_string_utf8(env, args[2], buf, sizeof(buf), &result_length);
             assert(status == napi_ok);
             assert(result_length > 0);
+            filter = buf;
         }
     }
 
@@ -435,7 +437,7 @@ napi_value Image::Resize(napi_env env, napi_callback_info info) {
     status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
     assert(status == napi_ok);
 
-    img->pixels->Resize(width, height, buf);
+    img->pixels->Resize(width, height, filter);
 
     return nullptr;
 }
