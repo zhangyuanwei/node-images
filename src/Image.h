@@ -196,7 +196,7 @@ class Image {
 
         static napi_value Resize(napi_env env, napi_callback_info info);
 
-        static napi_value Rotate(napi_env env, napi_callback_info infos);
+        static napi_value Rotate(napi_env env, napi_callback_info info);
         
         static napi_value FillColor(napi_env env, napi_callback_info info);
 

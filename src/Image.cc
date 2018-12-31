@@ -80,7 +80,7 @@ using v8::Object;
             status = func(env, arg, valueRef);                                 \
             assert(status == napi_ok);                                                              \
         } else { \
-            printf("undefined\n"); \
+            printf(#arg " undefined\n"); \
         }                                                                                           \
     } while(0);                                                                                     \
 
@@ -1124,7 +1124,7 @@ ImageState PixelArray::Rotate(size_t deg){
         pixels = &newArray;
         pixels->type = type;
         
-        if(rotate( this, pixels, deg) != SUCCESS){
+        if(rotate( this, pixels, (const size_t) deg) != SUCCESS){
             return FAIL;
         }
 
