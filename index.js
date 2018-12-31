@@ -124,6 +124,7 @@ prototype = {
 
         if (height === undefined) {
             size = this.size();
+            console.log(size);
             height = width * size.height / size.width;
         }
         this.width(width).height(height);

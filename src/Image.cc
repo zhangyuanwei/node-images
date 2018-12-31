@@ -351,7 +351,7 @@ napi_value Image::SetWidth(napi_env env, napi_callback_info info){ // {{{
 
     uint32_t value;
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &value);
-    img->pixels->width = value;
+    img->pixels->SetWidth((size_t) value);
 
     return jsthis;
 } // }}}
@@ -369,7 +369,7 @@ napi_value Image::GetHeight(napi_env env, napi_callback_info info) { // {{{
     assert(status == napi_ok);
 
     napi_value value;
-    status = napi_create_int32(env, img->pixels->width, &value);
+    status = napi_create_int32(env, img->pixels->height, &value);
     assert(status == napi_ok);
 
     return value;
@@ -390,7 +390,7 @@ napi_value Image::SetHeight(napi_env env, napi_callback_info info) { // {{{
 
     uint32_t value;
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &value);
-    img->pixels->height = value;
+    img->pixels->SetHeight((size_t) value);
 
     return jsthis;
 
