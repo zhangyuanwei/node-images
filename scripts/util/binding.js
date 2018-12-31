@@ -9,7 +9,6 @@ var errors = require('./errors'),
  */
 module.exports = function() {
   var binaryPath;
-  console.log(extensions.getBuildBinaryPath());
   if (extensions.hasBinary(extensions.getBuildBinaryPath())) {
     return require(extensions.getBuildBinaryPath());
   }

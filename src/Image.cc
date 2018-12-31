@@ -77,12 +77,10 @@ using v8::Object;
         status = napi_typeof(env, arg, &valuetype);                                                 \
         assert(status == napi_ok);                                                                  \
         if (valuetype != napi_undefined) {                                                          \
-            status = func(env, arg, valueRef);                                 \
+            status = func(env, arg, valueRef);                                                      \
             assert(status == napi_ok);                                                              \
-        } else { \
-            printf(#arg " undefined\n"); \
-        }                                                                                           \
-    } while(0);                                                                                     \
+        }                                                                                                                                                                                    \
+    } while(0);                                                                                                                                                                        
 
 #define STRINGFY(n) #n
 #define MERGE_FILE_LINE(file, line, msg) ( file ":" STRINGFY(line) " " msg)
