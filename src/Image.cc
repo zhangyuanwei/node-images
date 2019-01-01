@@ -655,7 +655,7 @@ napi_value Image::DrawImage(napi_env env, napi_callback_info info) { // {{{
 
     napi_value jsthis;
 
-    size_t argc = 4;
+    size_t argc = 3;
     napi_value args[argc];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
@@ -669,7 +669,7 @@ napi_value Image::DrawImage(napi_env env, napi_callback_info info) { // {{{
     uint32_t x, y = 0;
 
     if (argc < 3) {
-        // @TODO
+        napi_throw_error(env, "50000", "ERROR: invalid arguments.");
         return nullptr;
     }
 
@@ -677,7 +677,7 @@ napi_value Image::DrawImage(napi_env env, napi_callback_info info) { // {{{
     status = napi_coerce_to_object(env, args[0], &obj);
     assert(status == napi_ok);
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &x);
-    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &y);
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[2], &y);
 
     status = napi_unwrap(env, obj, reinterpret_cast<void **>(&src));
     assert(status == napi_ok);
