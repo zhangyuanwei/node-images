@@ -17,6 +17,16 @@ images("input.jpg")                     //Load image from file
         quality : 50                    //保存图片到文件,图片质量为50
     });
 ```
+
+
+## Support 支持情况
+
+| Platform | Architecture | Node Version |
+|:------|:-------------|:------------|
+| Windows | x86 & x64 | 0.9.11, 0.10, 0.12, 1, 2, 3, 4, 5, 6, 8 |
+| OSX | X64| 0.9.11, 0.10, 0.12, 1, 2, 3, 4, 5, 6, 8, 9, 10|
+| Linux* | x86 & x64 | 0.9.11, 0.10, 0.12, 1, 2, 3, 4, 5, 6, 8 | 
+
 ## Features 功能特性
 
 * Lightweight: no need to install any image processing library.
