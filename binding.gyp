@@ -12,6 +12,7 @@
         'sources': [
             'src/Image.cc',
             'src/Resize.cc',
+            'src/Rotate.cc',
             'src/resampler.cpp'
         ],
         "include_dirs" : [

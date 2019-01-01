@@ -76,6 +76,7 @@ function getHumanNodeVersion(abi) {
     case 53: return 'Electron 1.6.x';
     case 55: return 'Node.js 8.x';
     case 57: return 'Node.js 8.x';
+    case 64: return 'Node.js 10.x';
     default: return false;
   }
 }
@@ -277,6 +278,16 @@ function getBinaryPath() {
   return binaryPath;
 }
 
+function getBuildBinaryPath() {
+  var env = process.env['NODE_DEBUG'] === 'dev' ? 'Debug' : 'Release';
+  return path.resolve(
+    path.dirname(__dirname),
+    '..',
+    'build',
+    env,
+    'binding.node'
+  );
+}
 /**
  * An array of paths suitable for use as a local disk cache of the binding.
  *
@@ -408,6 +419,7 @@ module.exports.hasBinary = hasBinary;
 module.exports.getBinaryUrl = getBinaryUrl;
 module.exports.getBinaryName = getBinaryName;
 module.exports.getBinaryPath = getBinaryPath;
+module.exports.getBuildBinaryPath = getBuildBinaryPath;
 module.exports.getBinaryCachePath = getBinaryCachePath;
 module.exports.getCachedBinary = getCachedBinary;
 module.exports.getCachePathCandidates = getCachePathCandidates;
