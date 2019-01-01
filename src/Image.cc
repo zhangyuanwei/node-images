@@ -379,7 +379,7 @@ napi_value Image::SetHeight(napi_env env, napi_callback_info info) { // {{{
 
     napi_value jsthis;
     size_t argc = 1;
-    napi_value args[1];
+    napi_value args[argc];
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
 
     Image *img;
@@ -406,7 +406,7 @@ napi_value Image::Resize(napi_env env, napi_callback_info info) {
     napi_value value;
 
     size_t argc = 3;
-    napi_value args[3] = {nullptr};
+    napi_value args[argc] = {nullptr};
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -451,7 +451,7 @@ napi_value Image::Rotate(napi_env env, napi_callback_info info) {
     napi_value jsthis;
 
     size_t argc = 1;
-    napi_value args[1];
+    napi_value args[argc];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -494,7 +494,7 @@ napi_value Image::FillColor(napi_env env, napi_callback_info info) { // {{{
     napi_value value;
 
     size_t argc = 4;
-    napi_value args[4];
+    napi_value args[argc];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -535,7 +535,7 @@ napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
     napi_value value;
 
     size_t argc = 3;
-    napi_value args[3];
+    napi_value args[argc];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -604,8 +604,8 @@ napi_value Image::CopyFromImage(napi_env env, napi_callback_info info) { // {{{
 
     napi_value jsthis;
 
-    size_t argc = 4;
-    napi_value args[4];
+    size_t argc = 5;
+    napi_value args[argc];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -656,7 +656,7 @@ napi_value Image::DrawImage(napi_env env, napi_callback_info info) { // {{{
     napi_value jsthis;
 
     size_t argc = 4;
-    napi_value args[4];
+    napi_value args[argc];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -696,7 +696,7 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
     napi_value jsthis;
 
     size_t argc = 2;
-    napi_value args[2] = {nullptr};
+    napi_value args[argc] = {nullptr};
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
