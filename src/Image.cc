@@ -406,7 +406,7 @@ napi_value Image::Resize(napi_env env, napi_callback_info info) {
     napi_value value;
 
     size_t argc = 3;
-    napi_value args[argc] = {nullptr};
+    napi_value args[argc];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
@@ -696,7 +696,7 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
     napi_value jsthis;
 
     size_t argc = 2;
-    napi_value args[argc] = {nullptr};
+    napi_value args[argc];
 
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
