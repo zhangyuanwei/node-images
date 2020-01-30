@@ -1,3 +1,3 @@
 [submodule "gyp"]
-	path = gyp
-	url = https://github.com/xiangshouding/gyp.git
+    path = gyp
+    url = https://github.com/xiangshouding/gyp.git
