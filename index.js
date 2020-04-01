@@ -29,7 +29,7 @@
 var USE_OLD_API = false,
     fs = require("fs"),
     path = require("path"),
-    _images = require("./scripts/util/binding.js")(),
+    _images = require("./scripts/binding.js")(),
     _Image = _images.Image,
     slice = Array.prototype.slice,
     FILE_TYPE_MAP,
