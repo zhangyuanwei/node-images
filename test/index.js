@@ -1,4 +1,5 @@
-var images = require("../");
+var imagesFn = require(__dirname + '/../');
+var images = function (file) { return imagesFn(__dirname + '/' + file); };
 
 images("input.png")
     .resize( 200 )

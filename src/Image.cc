@@ -146,9 +146,8 @@ napi_value Image::Init(napi_env env, napi_value exports) { // {{{
     };
 
     napi_value cons;
-
     status = napi_define_class(env, "Image", NAPI_AUTO_LENGTH, New, nullptr, 14, properties, &cons);
-    assert(status == napi_ok);
+    assert(status == napi_ok); 
 
     status = napi_create_reference(env, cons, 1, &constructor);
     assert(status == napi_ok);
@@ -557,7 +556,7 @@ napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
     if (argc >= 3) {
         GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[2], &end);
         if(end < start || end > length){
-            THROW_TYPE_ERROR("");
+            THROW_TYPE_ERROR("invalid `start` and `end`");
             return nullptr;
         }
     }

@@ -51,6 +51,8 @@ function WrappedImage(width, height) {
 
 prototype = {
     loadFromBuffer: function(buffer, start, end) {
+        start = start || 0;
+        end = end || buffer.length;
         this._handle.loadFromBuffer(buffer, start, end);
     },
     copyFromImage: function(img, x, y, width, height) {
