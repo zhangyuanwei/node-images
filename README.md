@@ -98,7 +98,7 @@ See:.save(file[, type[, config]])
 参考:.save(file[, type[, config]])
 
 ### .save(file[, type[, config]])
-eg:`images("input.png").encode("output.jpg", {operation:50})`
+eg:`images("input.png").save("output.jpg", {operation:50})`
 Encoding and save the current image to a *file*, if the *type* is not specified, *type* well be automatically determined according to the *file*, *config* is image setting. eg: `{ operation:50 }`  
 编码并保存当前图像到 *file* ,如果type未指定,则根据 *file* 自动判断文件类型，config为图片设置，目前支持设置JPG图像质量
 
