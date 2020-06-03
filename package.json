@@ -1,24 +1,17 @@
 {
   "name": "images",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "description": "Cross-platform image decoder(webp/png/jpeg/gif) and encoder(webp/png/jpeg) for Node.js",
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
     "test": "node test.js",
-    "install": "node ./scripts/install.js"
+    "install": "node scripts/nothing.js"
   },
   "repositoryName": "zhangyuanwei/node-images",
   "repository": {
     "type": "git",
     "url": "https://github.com/zhangyuanwei/node-images.git"
-  },
-  "dependencies": {
-    "mkdirp": "^0.5.1",
-    "nan": "^2.3.2",
-    "node-gyp": "^3.3.1",
-    "npmlog": "^4.0.0",
-    "request": "^2.79.0"
   },
   "keywords": [
     "image",
