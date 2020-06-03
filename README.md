@@ -20,6 +20,19 @@ images("input.jpg")                     //Load image from file
 
 ## Support 支持情况
 
+if node >= 10.x, please install images@latest
+
+| Platform | Architecture | Node Version |
+|:------|:-------------|:------------|
+| Windows | x64 |8, 9, 10, 11, 12|
+| OSX | X64 | 8, 9, 10, 11, 12|
+| Linux* | x64 |8, 9, 10, 11, 12| 
+
+- The 32-bit system is not supported for the time being.
+
+
+if  node <= 9.x, please install images@3.1.1
+
 | Platform | Architecture | Node Version |
 |:------|:-------------|:------------|
 | Windows | x86 & x64 | 0.9.11, 0.10, 0.12, 1, 2, 3, 4, 5, 6, 8, 10|
