@@ -8,8 +8,8 @@
 /third
 /demo
 /build
-/vendor
 /lib
+/gyp
 
 
 .DS_Store
