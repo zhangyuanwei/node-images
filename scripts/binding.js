@@ -40,8 +40,7 @@ function getBinaryPath() {
   return path.join(
     root,
     'vendor',
-    os.platform(),
-    binding
+    os.platform() + '-' + os.arch() + '-' + binding
   );
 }
 
