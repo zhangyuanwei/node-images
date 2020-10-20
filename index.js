@@ -91,19 +91,19 @@ prototype = {
         fs.writeFileSync(file, this.encode(type || path.extname(file), config));
     },
     saveAsync: function (file, type, config, callback) {
-        if (type && typeof(type) === 'object') {
-            config = type;
-            type = undefined;
-        }
         if (!callback) {
-            if (typeof type === 'function') {
-                callback = type;
-                type = undefined;
-            }
             if (typeof config === 'function') {
                 callback = config;
                 config = undefined;
             }
+            else if (typeof type === 'function') {
+                callback = type;
+                type = undefined;
+            }
+        }
+        if (type && typeof(type) === 'object') {
+            config = type;
+            type = undefined;
         }
         fs.writeFile(file, this.encode(type || path.extname(file), config), callback);
         return this;
