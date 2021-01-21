@@ -3,7 +3,7 @@ export = images;
 
 declare namespace images {
     interface EncoderConfig {
-        [key: string]: number | string;
+        [key: string]: number | string | undefined;
 
         quality?: number;
     }
@@ -28,15 +28,15 @@ declare namespace images {
 
         fill(red: number, green: number, blue: number, alpha?: number): this;
 
-        fillColor = this.fill;
+        fillColor(red: number, green: number, blue: number, alpha?: number): this;;
 
         draw(img: Image, x: number, y: number): this;
 
-        drawImage = this.draw;
+        drawImage(img: Image, x: number, y: number): this;
 
         encode(type: FILE_TYPE | TYPE, config?: EncoderConfig): Buffer;
 
-        toBuffer = this.encode;
+        toBuffer(type: FILE_TYPE | TYPE, config?: EncoderConfig): Buffer;
 
         save(file: string, type: FILE_TYPE | TYPE, config: EncoderConfig): this;
         save(file: string, config: EncoderConfig): this;
@@ -62,6 +62,8 @@ declare namespace images {
         height(height: number): this;
     }
 
+    function loadFromFileAsync(file: string): Promise<Image>;
+    function loadFromFileNew(filePath: string): Image;
     function loadFromFile(file: string): Image;
 
     function createImage(width?: number, height?: number): Image;

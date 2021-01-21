@@ -55,6 +55,9 @@ prototype = {
         end = end || buffer.length;
         this._handle.loadFromBuffer(buffer, start, end);
     },
+    loadFromFile: function(path) {
+        this._handle.loadFromFile(path);
+    },
     copyFromImage: function(img, x, y, width, height) {
         if (img instanceof WrappedImage) {
             img = img._handle;
@@ -213,6 +216,20 @@ images.loadFromFile = function(file) {
     return images.loadFromBuffer(fs.readFileSync(file));
 };
 
+images.loadFromFileAsync = function(file) {
+    return new Promise((resolve, reject) => {
+        fs.readFile(file, (err, data) => {
+            if (err) {
+                reject(err)
+
+                return
+            }
+
+            resolve(images.loadFromBuffer(data))
+        })
+    })
+}
+
 images.createImage = function(width, height) {
     return WrappedImage(width, height);
 };
@@ -220,6 +237,10 @@ images.createImage = function(width, height) {
 images.loadFromBuffer = function(buffer, start, end) {
     return WrappedImage().loadFromBuffer(buffer, start, end);
 };
+
+images.loadFromFileNew = function(path) {
+    return WrappedImage().loadFromFile(path);
+}
 
 images.copyFromImage = function(src, x, y, width, height) {
     return WrappedImage().copyFromImage(src, x, y, width, height);

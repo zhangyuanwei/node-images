@@ -139,6 +139,7 @@ napi_value Image::Init(napi_env env, napi_value exports) { // {{{
         DECLARE_NAPI_METHOD("rotate", Rotate),
         DECLARE_NAPI_METHOD("fillColor", FillColor),
         DECLARE_NAPI_METHOD("loadFromBuffer", LoadFromBuffer),
+        DECLARE_NAPI_METHOD("loadFromFile", LoadFromFile),
         DECLARE_NAPI_METHOD("copyFromImage", CopyFromImage),
         DECLARE_NAPI_METHOD("drawImage", DrawImage),
         DECLARE_NAPI_METHOD("toBuffer", ToBuffer),
@@ -510,6 +511,87 @@ napi_value Image::FillColor(napi_env env, napi_callback_info info) { // {{{
     return jsthis;
 } // }}}
 
+
+napi_value Image::LoadFromFile(napi_env env, napi_callback_info info) { // {{{
+napi_status status;
+
+    napi_value jsthis;
+    napi_value value;
+
+    size_t argc = 3;
+    napi_value args[3];
+
+    status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
+    // assert(status == napi_ok);
+
+    // bool is_flag = false;
+
+    // status = napi_is_buffer(env, args[0], &is_flag);
+    // assert(status == napi_ok);
+
+    // if (!is_flag) {
+    //     THROW_TYPE_ERROR(": first argument must be a buffer.");
+    //     assert(is_flag);
+    // }
+
+    // GET_VALUE_WITH_NAPI_FUNC(napi_get_value_string_utf8, args[1], &filePath, 200, &result_length);
+
+    size_t result_length;
+    char filePath[200] = {'\0'};
+
+    status = napi_get_value_string_utf8(env, args[0], filePath, sizeof(filePath), &result_length);
+
+    printf(filePath);
+
+    FILE * fp = fopen(filePath, "r");
+
+    // check file size
+    fseek(fp, 0, SEEK_END);
+    long fileSize = ftell(fp);
+
+    fseek(fp, 0, SEEK_SET);
+
+    /// allocate max possible array size = fileSize/2
+    uint8_t * buffer = (uint8_t *)malloc(fileSize * sizeof(char)); // Enough memory for the file
+    fread(buffer, fileSize, 1, fp); // Read in the entire file
+
+    fclose(fp);
+
+    Image *img;
+
+    uint32_t start, end, length;
+
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    assert(status == napi_ok);
+
+    ImageCodec *codec;
+    ImageDecoder decoder;
+    ImageData input_data, *input;
+
+    start = 0;
+    end = fileSize;
+
+    input = &input_data;
+    input->data = &buffer[start];
+    input->length = end - start;
+
+    img->pixels->Free();
+    codec = codecs;
+
+    while (codec != NULL && !isError()) {
+        decoder = codec->decoder;
+        input->position = 0;
+        if (decoder != NULL && decoder(img->pixels, input) == SUCCESS) {
+            return jsthis;
+        }
+        codec = codec->next;
+    }
+
+    isError() ? (THROW_GET_ERROR()) : THROW_ERROR("Unknown format");
+    return jsthis;
+
+}
+
 napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
     napi_status status;
 
@@ -577,7 +659,7 @@ napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
         codec = codec->next;
     }
 
-    isError() ? (THROW_GET_ERROR()) : THROW_ERROR("Unknow format");
+    isError() ? (THROW_GET_ERROR()) : THROW_ERROR("Unknown format");
     return jsthis;
 } // }}}
 
