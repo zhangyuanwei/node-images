@@ -541,8 +541,6 @@ napi_status status;
 
     status = napi_get_value_string_utf8(env, args[0], filePath, sizeof(filePath), &result_length);
 
-    printf(filePath);
-
     FILE * fp = fopen(filePath, "r");
 
     // check file size
