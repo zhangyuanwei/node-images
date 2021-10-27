@@ -228,12 +228,12 @@ napi_value Image::SetMaxHeight(napi_env env, napi_callback_info info) { // {{{
     size_t argc = 1;
     napi_value value;
     napi_value jsthis;
-    uint32_t maxHeight;
 
     status = napi_get_cb_info(env, info, &argc, &value, &jsthis, nullptr);
     assert(status == napi_ok);
 
-    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, value, &maxHeight);
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, value, (uint32_t *) &maxHeight);
+	
 
     return value;
 } // }}}
