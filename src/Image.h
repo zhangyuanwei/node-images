@@ -201,6 +201,8 @@ class Image {
         static napi_value FillColor(napi_env env, napi_callback_info info);
 
         static napi_value LoadFromBuffer(napi_env env, napi_callback_info info);
+        // static napi_value LoadFromBuffer(napi_env env, napi_callback_info info);
+        static napi_value LoadFromFile(napi_env env, napi_callback_info info);
 
         static napi_value ToBuffer(napi_env env, napi_callback_info info);
 
