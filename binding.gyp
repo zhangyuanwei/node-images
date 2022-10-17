@@ -4,6 +4,7 @@
          'with_jpeg%': 'true',
          'with_gif%':  'true',
          'with_webp%': 'true',
+         'with_blp%':  'true',
          'with_bmp%':  'false',
          'with_raw%':  'true',
      },
@@ -49,6 +50,10 @@
             ['with_bmp=="true"', {
                 'defines': ['HAVE_BMP'],
                 'sources': ['src/Bmp.cc']
+            }],
+            ['with_blp=="true"', {
+                'defines': ['HAVE_BLP'],
+                'sources': ['src/Blp.cc']
             }],
             ['with_raw=="true"', {
                 'defines': ['HAVE_RAW'],

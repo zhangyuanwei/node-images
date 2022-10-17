@@ -5,7 +5,7 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "test": "node test.js",
+    "test": "node test/index.js",
     "install": "node scripts/nothing.js"
   },
   "repositoryName": "zhangyuanwei/node-images",

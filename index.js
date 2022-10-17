@@ -185,8 +185,10 @@ images.TYPE_GIF = _images.TYPE_GIF;
 images.TYPE_BMP = _images.TYPE_BMP;
 images.TYPE_RAW = _images.TYPE_RAW;
 images.TYPE_WEBP = _images.TYPE_WEBP;
+images.TYPE_BLP = _images.TYPE_BLP;
 
 FILE_TYPE_MAP = {
+    ".blp": images.TYPE_BLP,
     ".png": images.TYPE_PNG,
     ".jpg": images.TYPE_JPEG,
     ".jpeg": images.TYPE_JPEG,

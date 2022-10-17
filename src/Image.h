@@ -40,6 +40,7 @@ typedef enum {
     TYPE_BMP,
     TYPE_RAW,
     TYPE_WEBP,
+    TYPE_BLP,
 } ImageType;
 
 typedef enum {
@@ -93,6 +94,8 @@ typedef struct PixelArray {
     
     ImageState Rotate(size_t deg);
 
+    ImageState toBGRA();
+
     void DetectTransparent();
 } PixelArray;
 
@@ -125,7 +128,6 @@ typedef struct ImageCodec {
 #define DECODER_FN(type) ImageState DECODER(type)(PixelArray *output, ImageData *input)
 #define IMAGE_CODEC(type) DECODER_FN(type); ENCODER_FN(type)
 
-
 #ifdef HAVE_PNG
 IMAGE_CODEC(Png);
 #endif
@@ -148,6 +150,10 @@ IMAGE_CODEC(Raw);
 
 #ifdef HAVE_WEBP
 IMAGE_CODEC(Webp);
+#endif
+
+#ifdef HAVE_BLP
+IMAGE_CODEC(Blp);
 #endif
 
 class Image {
@@ -235,6 +241,9 @@ class Image {
 #endif
 #ifdef HAVE_PNG
             regCodec(DECODER(Png), ENCODER(Png), TYPE_PNG);
+#endif
+#ifdef HAVE_BLP
+            regCodec(DECODER(Blp), ENCODER(Blp), TYPE_BLP);
 #endif
         }
 

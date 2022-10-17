@@ -40,36 +40,43 @@
 //#define SET_ERROR_FILE_LINE(file, line, msg) Image::SetError( file #line msg)
 //#define SET_ERROR(msg) SET_ERROR_FILE_LINE(__FILE__, __LINE__, meg)
 
-#define DECLARE_NAPI_METHOD(name, func)                                                             \
-  { name, 0, func, 0, 0, 0, napi_default, 0 }
-#define DECLARE_NAPI_ACCESSOR(name, get, set)                                                       \
-  { name, 0, 0, get, set, 0, napi_default, 0 }
-#define DEFINE_NAPI_CONSTANT(name, value)                                                           \
-  do {                                                                                              \
-    napi_value _define_value;                                                                       \
-    napi_status _define_status;                                                                     \
-    _define_status = napi_create_uint32(env, value, &_define_value);                                \
-    assert(_define_status == napi_ok);                                                              \
-    _define_status = napi_set_named_property(env, exports, name, _define_value);                    \
-    assert(_define_status == napi_ok);                                                              \
-  } while(0);
+#define DECLARE_NAPI_METHOD(name, func)         \
+    {                                           \
+        name, 0, func, 0, 0, 0, napi_default, 0 \
+    }
+#define DECLARE_NAPI_ACCESSOR(name, get, set)    \
+    {                                            \
+        name, 0, 0, get, set, 0, napi_default, 0 \
+    }
+#define DEFINE_NAPI_CONSTANT(name, value)                                            \
+    do                                                                               \
+    {                                                                                \
+        napi_value _define_value;                                                    \
+        napi_status _define_status;                                                  \
+        _define_status = napi_create_uint32(env, value, &_define_value);             \
+        assert(_define_status == napi_ok);                                           \
+        _define_status = napi_set_named_property(env, exports, name, _define_value); \
+        assert(_define_status == napi_ok);                                           \
+    } while (0);
 
-#define GET_VALUE_WITH_NAPI_FUNC(func, arg, valueRef)                                               \
-    do {                                                                                            \
-        napi_valuetype valuetype;                                                                   \
-        status = napi_typeof(env, arg, &valuetype);                                                 \
-        assert(status == napi_ok);                                                                  \
-        if (valuetype != napi_undefined) {                                                          \
-            status = func(env, arg, valueRef);                                                      \
-            assert(status == napi_ok);                                                              \
-        }                                                                                                                                                                                    \
-    } while(0);                                                                                                                                                                        
+#define GET_VALUE_WITH_NAPI_FUNC(func, arg, valueRef) \
+    do                                                \
+    {                                                 \
+        napi_valuetype valuetype;                     \
+        status = napi_typeof(env, arg, &valuetype);   \
+        assert(status == napi_ok);                    \
+        if (valuetype != napi_undefined)              \
+        {                                             \
+            status = func(env, arg, valueRef);        \
+            assert(status == napi_ok);                \
+        }                                             \
+    } while (0);
 
 #define STRINGFY(n) #n
-#define MERGE_FILE_LINE(file, line, msg) ( file ":" STRINGFY(line) " " msg)
+#define MERGE_FILE_LINE(file, line, msg) (file ":" STRINGFY(line) " " msg)
 #define FILE_LINE(msg) MERGE_FILE_LINE(__FILE__, __LINE__, msg)
 #define ERROR(type, msg) napi_throw_error(env, "50000", msg)
-#define THROW(err)  napi_throw(env, err)
+#define THROW(err) napi_throw(env, err)
 #define SET_ERROR(msg) (Image::setError(FILE_LINE(msg)))
 #define GET_ERROR() (Image::getError(env, info))
 #define THROW_ERROR(msg) napi_throw_error(env, "50000", FILE_LINE(msg))
@@ -78,18 +85,18 @@
 #define THROW_TYPE_ERROR(msg) napi_throw_type_error(env, "50010", msg)
 #define THROW_INVALID_ARGUMENTS_ERROR(msg) THROW_TYPE_ERROR("Invalid arguments" msg)
 
-#define DEFAULT_WIDTH_LIMIT  10240 // default limit 10000x10000
+#define DEFAULT_WIDTH_LIMIT 10240  // default limit 10000x10000
 #define DEFAULT_HEIGHT_LIMIT 10240 // default limit 10000x10000
 
 #define AdjustAmountOfExternalAllocatedMemory(bc) static_cast<int>( \
-        v8::Isolate::GetCurrent()->AdjustAmountOfExternalAllocatedMemory(bc));
+    v8::Isolate::GetCurrent()->AdjustAmountOfExternalAllocatedMemory(bc));
 
 // Persistent<Function> Image::constructor;
 
-
-Image::Image(): env_(nullptr), wrapper_(nullptr) {
+Image::Image() : env_(nullptr), wrapper_(nullptr)
+{
     size_t size;
-    pixels = (PixelArray *) malloc(sizeof(PixelArray));
+    pixels = (PixelArray *)malloc(sizeof(PixelArray));
     pixels->width = pixels->height = 0;
     pixels->type = EMPTY;
     pixels->data = NULL;
@@ -98,7 +105,8 @@ Image::Image(): env_(nullptr), wrapper_(nullptr) {
     usedMemory += size;
 }
 
-Image::~Image() { 
+Image::~Image()
+{
     napi_delete_reference(env_, wrapper_);
 
     int32_t size;
@@ -106,25 +114,26 @@ Image::~Image() {
     pixels->Free();
     free(pixels);
     AdjustAmountOfExternalAllocatedMemory(-size);
-    
+
     usedMemory -= size;
 }
 
-void Image::Destructor(napi_env env, void* nativeObejct, void*) {
-    reinterpret_cast<Image*>(nativeObejct)->~Image();
+void Image::Destructor(napi_env env, void *nativeObejct, void *)
+{
+    reinterpret_cast<Image *>(nativeObejct)->~Image();
 }
 
 napi_ref Image::constructor;
 
-//size_t Image::survival;
+// size_t Image::survival;
 ImageCodec *Image::codecs;
 
 size_t Image::maxWidth = DEFAULT_WIDTH_LIMIT;
 size_t Image::maxHeight = DEFAULT_HEIGHT_LIMIT;
 const char *Image::error = NULL;
 
-
-napi_value Image::Init(napi_env env, napi_value exports) { // {{{
+napi_value Image::Init(napi_env env, napi_value exports)
+{ // {{{
     regAllCodecs();
 
     napi_status status;
@@ -142,12 +151,11 @@ napi_value Image::Init(napi_env env, napi_value exports) { // {{{
         DECLARE_NAPI_METHOD("copyFromImage", CopyFromImage),
         DECLARE_NAPI_METHOD("drawImage", DrawImage),
         DECLARE_NAPI_METHOD("toBuffer", ToBuffer),
-        DECLARE_NAPI_METHOD("gc", GC)
-    };
+        DECLARE_NAPI_METHOD("gc", GC)};
 
     napi_value cons;
     status = napi_define_class(env, "Image", NAPI_AUTO_LENGTH, New, nullptr, 14, properties, &cons);
-    assert(status == napi_ok); 
+    assert(status == napi_ok);
 
     status = napi_create_reference(env, cons, 1, &constructor);
     assert(status == napi_ok);
@@ -158,6 +166,7 @@ napi_value Image::Init(napi_env env, napi_value exports) { // {{{
     DEFINE_NAPI_CONSTANT("TYPE_BMP", TYPE_BMP);
     DEFINE_NAPI_CONSTANT("TYPE_RAW", TYPE_RAW);
     DEFINE_NAPI_CONSTANT("TYPE_WEBP", TYPE_WEBP);
+    DEFINE_NAPI_CONSTANT("TYPE_BLP", TYPE_BLP);
 
     status = napi_set_named_property(env, exports, "Image", cons);
     assert(status == napi_ok);
@@ -165,11 +174,13 @@ napi_value Image::Init(napi_env env, napi_value exports) { // {{{
     return exports;
 } //}}}
 
-void Image::setError(const char * err){ // {{{
+void Image::setError(const char *err)
+{ // {{{
     error = err;
 } // }}}
 
-napi_value Image::getError(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::getError(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
     napi_value code, msg, err;
 
@@ -182,11 +193,13 @@ napi_value Image::getError(napi_env env, napi_callback_info info) { // {{{
     return err;
 } // }}}
 
-bool Image::isError(){ // {{{
+bool Image::isError()
+{ // {{{
     return error != NULL;
 } // }}}
 
-napi_value Image::GetMaxWidth(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::GetMaxWidth(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
     napi_value width;
 
@@ -197,7 +210,8 @@ napi_value Image::GetMaxWidth(napi_env env, napi_callback_info info) { // {{{
 
 } // }}}
 
-napi_value Image::SetMaxWidth(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::SetMaxWidth(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
 
     size_t argc = 1;
@@ -207,12 +221,13 @@ napi_value Image::SetMaxWidth(napi_env env, napi_callback_info info) { // {{{
     status = napi_get_cb_info(env, info, &argc, &value, &jsthis, nullptr);
     assert(status == napi_ok);
 
-    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, value, (uint32_t *) &maxWidth);
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, value, (uint32_t *)&maxWidth);
 
     return value;
 } // }}}
 
-napi_value Image::GetMaxHeight(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::GetMaxHeight(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
     napi_value height;
 
@@ -222,7 +237,8 @@ napi_value Image::GetMaxHeight(napi_env env, napi_callback_info info) { // {{{
     return height;
 } // }}}
 
-napi_value Image::SetMaxHeight(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::SetMaxHeight(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
 
     size_t argc = 1;
@@ -232,8 +248,7 @@ napi_value Image::SetMaxHeight(napi_env env, napi_callback_info info) { // {{{
     status = napi_get_cb_info(env, info, &argc, &value, &jsthis, nullptr);
     assert(status == napi_ok);
 
-    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, value, (uint32_t *) &maxHeight);
-	
+    GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, value, (uint32_t *)&maxHeight);
 
     return value;
 } // }}}
@@ -241,7 +256,8 @@ napi_value Image::SetMaxHeight(napi_env env, napi_callback_info info) { // {{{
 // Memory
 size_t Image::usedMemory = 0;
 
-napi_value Image::GetUsedMemory(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::GetUsedMemory(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
     napi_value value;
 
@@ -251,15 +267,17 @@ napi_value Image::GetUsedMemory(napi_env env, napi_callback_info info) { // {{{
     return value;
 } // }}}
 
-napi_value Image::GC(napi_env env, napi_callback_info info) { // {{{
-    //V8::LowMemoryNotification();
+napi_value Image::GC(napi_env env, napi_callback_info info)
+{ // {{{
+    // V8::LowMemoryNotification();
     napi_value undefined;
     napi_get_undefined(env, &undefined);
 
     return undefined;
 } // }}}
 
-napi_value Image::New(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::New(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
 
     napi_value target;
@@ -267,7 +285,8 @@ napi_value Image::New(napi_env env, napi_callback_info info) { // {{{
     assert(status == napi_ok);
 
     bool is_constructor = target != nullptr;
-    if (is_constructor) {
+    if (is_constructor)
+    {
         size_t argc = 2;
         napi_value args[2];
         napi_value jsthis;
@@ -283,23 +302,27 @@ napi_value Image::New(napi_env env, napi_callback_info info) { // {{{
 
         Image *img = new Image();
 
-        if (img->pixels->Malloc(width, height) != SUCCESS) {
+        if (img->pixels->Malloc(width, height) != SUCCESS)
+        {
             THROW_GET_ERROR();
             return nullptr;
         }
 
         img->env_ = env;
-        status = napi_wrap(env, jsthis, reinterpret_cast<void*>(img), Image::Destructor, nullptr, &img->wrapper_);
+        status = napi_wrap(env, jsthis, reinterpret_cast<void *>(img), Image::Destructor, nullptr, &img->wrapper_);
         assert(status == napi_ok);
 
         return jsthis;
-    } else {
+    }
+    else
+    {
         // @TODO
         return nullptr;
     }
 } // }}}
 
-napi_value Image::GetWidth(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::GetWidth(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
     napi_value jsthis;
 
@@ -307,7 +330,7 @@ napi_value Image::GetWidth(napi_env env, napi_callback_info info) { // {{{
     assert(status == napi_ok);
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&img));
     assert(status == napi_ok);
 
     napi_value value;
@@ -317,7 +340,8 @@ napi_value Image::GetWidth(napi_env env, napi_callback_info info) { // {{{
     return value;
 } // }}}
 
-napi_value Image::SetWidth(napi_env env, napi_callback_info info){ // {{{
+napi_value Image::SetWidth(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
 
     napi_value jsthis;
@@ -326,17 +350,18 @@ napi_value Image::SetWidth(napi_env env, napi_callback_info info){ // {{{
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&img));
     assert(status == napi_ok);
 
     uint32_t value;
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &value);
-    img->pixels->SetWidth((size_t) value);
+    img->pixels->SetWidth((size_t)value);
 
     return jsthis;
 } // }}}
 
-napi_value Image::GetHeight(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::GetHeight(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
 
     napi_value jsthis;
@@ -345,7 +370,7 @@ napi_value Image::GetHeight(napi_env env, napi_callback_info info) { // {{{
     assert(status == napi_ok);
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&img));
     assert(status == napi_ok);
 
     napi_value value;
@@ -356,7 +381,8 @@ napi_value Image::GetHeight(napi_env env, napi_callback_info info) { // {{{
 
 } // }}}
 
-napi_value Image::SetHeight(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::SetHeight(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
 
     napi_value jsthis;
@@ -365,23 +391,23 @@ napi_value Image::SetHeight(napi_env env, napi_callback_info info) { // {{{
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&img));
     assert(status == napi_ok);
 
     uint32_t value;
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &value);
-    img->pixels->SetHeight((size_t) value);
+    img->pixels->SetHeight((size_t)value);
 
     return jsthis;
 
 } // }}}
 
-
 /**
  * Scale image with bicubic.
  * @since 1.5.5+
  */
-napi_value Image::Resize(napi_env env, napi_callback_info info) {
+napi_value Image::Resize(napi_env env, napi_callback_info info)
+{
     napi_status status;
 
     napi_value jsthis;
@@ -401,11 +427,13 @@ napi_value Image::Resize(napi_env env, napi_callback_info info) {
     char *filter = nullptr;
     size_t result_length;
 
-    if (args[2]) {
+    if (args[2])
+    {
         napi_valuetype typ;
         char buf[64] = {'\0'};
         napi_typeof(env, args[2], &typ);
-        if (typ == napi_string) {
+        if (typ == napi_string)
+        {
             status = napi_get_value_string_utf8(env, args[2], buf, sizeof(buf), &result_length);
             assert(status == napi_ok);
             assert(result_length > 0);
@@ -414,7 +442,7 @@ napi_value Image::Resize(napi_env env, napi_callback_info info) {
     }
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&img));
     assert(status == napi_ok);
 
     img->pixels->Resize(width, height, filter);
@@ -426,7 +454,8 @@ napi_value Image::Resize(napi_env env, napi_callback_info info) {
  * Rotate image.
  * @since 1.5.5+
  */
-napi_value Image::Rotate(napi_env env, napi_callback_info info) {
+napi_value Image::Rotate(napi_env env, napi_callback_info info)
+{
 
     napi_status status;
 
@@ -442,15 +471,16 @@ napi_value Image::Rotate(napi_env env, napi_callback_info info) {
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &rotate);
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&img));
     assert(status == napi_ok);
 
     img->pixels->Rotate(rotate);
-    
+
     return jsthis;
 }
 
-napi_value Image::GetTransparent(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::GetTransparent(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
 
     napi_value jsthis;
@@ -459,7 +489,7 @@ napi_value Image::GetTransparent(napi_env env, napi_callback_info info) { // {{{
     assert(status == napi_ok);
 
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&img));
     assert(status == napi_ok);
 
     napi_value value;
@@ -469,7 +499,8 @@ napi_value Image::GetTransparent(napi_env env, napi_callback_info info) { // {{{
     return value;
 } // }}}
 
-napi_value Image::FillColor(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::FillColor(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
 
     napi_value jsthis;
@@ -488,7 +519,6 @@ napi_value Image::FillColor(napi_env env, napi_callback_info info) { // {{{
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[2], &b);
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[3], &a);
 
-
     Pixel color, *cp;
 
     cp = &color;
@@ -497,12 +527,13 @@ napi_value Image::FillColor(napi_env env, napi_callback_info info) { // {{{
     cp->B = b;
     cp->A = 0xFF;
 
-    if (a > 0) {
-        cp->A = (uint8_t) (a * 0xFF);
+    if (a > 0)
+    {
+        cp->A = (uint8_t)(a * 0xFF);
     }
-    
+
     Image *img;
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&img));
     assert(status == napi_ok);
 
     img->pixels->Fill(cp);
@@ -510,7 +541,8 @@ napi_value Image::FillColor(napi_env env, napi_callback_info info) { // {{{
     return jsthis;
 } // }}}
 
-napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
 
     napi_value jsthis;
@@ -527,7 +559,8 @@ napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
     status = napi_is_buffer(env, args[0], &is_flag);
     assert(status == napi_ok);
 
-    if (!is_flag) {
+    if (!is_flag)
+    {
         THROW_TYPE_ERROR(": first argument must be a buffer.");
         assert(is_flag);
     }
@@ -537,25 +570,28 @@ napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
     uint8_t *buffer;
     uint32_t start, end, length;
 
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&img));
     assert(status == napi_ok);
 
     ImageCodec *codec;
     ImageDecoder decoder;
     ImageData input_data, *input;
 
-    status = napi_get_buffer_info(env, args[0], (void **) &buffer, (size_t *)&length);
+    status = napi_get_buffer_info(env, args[0], (void **)&buffer, (size_t *)&length);
     assert(status == napi_ok);
 
     start = 0;
-    if (argc >= 2) {          
+    if (argc >= 2)
+    {
         GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &start);
     }
 
     end = length;
-    if (argc >= 3) {
+    if (argc >= 3)
+    {
         GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[2], &end);
-        if(end < start || end > length){
+        if (end < start || end > length)
+        {
             THROW_TYPE_ERROR("invalid `start` and `end`");
             return nullptr;
         }
@@ -568,10 +604,12 @@ napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
     img->pixels->Free();
     codec = codecs;
 
-    while (codec != NULL && !isError()) {
+    while (codec != NULL && !isError())
+    {
         decoder = codec->decoder;
         input->position = 0;
-        if (decoder != NULL && decoder(img->pixels, input) == SUCCESS) {
+        if (decoder != NULL && decoder(img->pixels, input) == SUCCESS)
+        {
             return jsthis;
         }
         codec = codec->next;
@@ -581,7 +619,8 @@ napi_value Image::LoadFromBuffer(napi_env env, napi_callback_info info) { // {{{
     return jsthis;
 } // }}}
 
-napi_value Image::CopyFromImage(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::CopyFromImage(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
 
     napi_value jsthis;
@@ -597,10 +636,11 @@ napi_value Image::CopyFromImage(napi_env env, napi_callback_info info) { // {{{
 
     // @TODO
 
-    if (argc == 0) {
+    if (argc == 0)
+    {
         return nullptr;
     }
-    
+
     napi_value obj;
     status = napi_coerce_to_object(env, args[0], &obj);
     assert(status == napi_ok);
@@ -615,24 +655,28 @@ napi_value Image::CopyFromImage(napi_env env, napi_callback_info info) { // {{{
     w = src->pixels->width;
     h = src->pixels->height;
 
-    if (argc >= 3) {
+    if (argc >= 3)
+    {
         GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[1], &x);
         GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[2], &y);
     }
 
-    if(argc >= 5) {
+    if (argc >= 5)
+    {
         GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[3], &w);
         GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[4], &h);
     }
 
-    if(dst->pixels->CopyFrom(src->pixels, x, y, w, h) != SUCCESS){
+    if (dst->pixels->CopyFrom(src->pixels, x, y, w, h) != SUCCESS)
+    {
         THROW_GET_ERROR();
     }
 
     return nullptr;
-}// }}}
+} // }}}
 
-napi_value Image::DrawImage(napi_env env, napi_callback_info info) { // {{{
+napi_value Image::DrawImage(napi_env env, napi_callback_info info)
+{ // {{{
     napi_status status;
 
     napi_value jsthis;
@@ -643,14 +687,16 @@ napi_value Image::DrawImage(napi_env env, napi_callback_info info) { // {{{
     status = napi_get_cb_info(env, info, &argc, args, &jsthis, nullptr);
     assert(status == napi_ok);
 
-    if (argc == 0) {
+    if (argc == 0)
+    {
         return nullptr;
     }
 
     Image *src, *dst = nullptr;
     uint32_t x, y = 0;
 
-    if (argc < 3) {
+    if (argc < 3)
+    {
         napi_throw_error(env, "50000", "ERROR: invalid arguments.");
         return nullptr;
     }
@@ -672,7 +718,8 @@ napi_value Image::DrawImage(napi_env env, napi_callback_info info) { // {{{
     return jsthis;
 } // }}}
 
-napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
+napi_value Image::ToBuffer(napi_env env, napi_callback_info info)
+{ //{{{
     napi_status status;
 
     napi_value jsthis;
@@ -694,7 +741,8 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
 
     int length = 0;
 
-    if (argc == 0) {
+    if (argc == 0)
+    {
         THROW_INVALID_ARGUMENTS_ERROR("");
         return nullptr;
     }
@@ -702,7 +750,7 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
     uint32_t result = 0;
     GET_VALUE_WITH_NAPI_FUNC(napi_get_value_uint32, args[0], &result);
 
-    type = (ImageType) result;
+    type = (ImageType)result;
     config = NULL;
 
     bool is_flag = false;
@@ -710,10 +758,11 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
     status = napi_is_buffer(env, args[1], &is_flag);
     assert(status == napi_ok);
 
-    if (is_flag) {
-        char* buffer;
+    if (is_flag)
+    {
+        char *buffer;
         unsigned length;
-        
+
         status = napi_get_buffer_info(env, args[1], (void **)&buffer, (size_t *)&length);
         assert(status == napi_ok);
 
@@ -722,29 +771,34 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
         config->length = length;
     }
 
-    status = napi_unwrap(env, jsthis, reinterpret_cast<void**>(&img));
+    status = napi_unwrap(env, jsthis, reinterpret_cast<void **>(&img));
     assert(status == napi_ok);
 
     pixels = img->pixels;
 
-    if(pixels->data != NULL){
+    if (pixels->data != NULL)
+    {
         codec = codecs;
         output = &output_data;
         output->data = NULL;
         output->length = 0;
         output->position = 0;
 
-        while (codec != NULL && !isError()) {
-            if (codec->type == type) {
+        while (codec != NULL && !isError())
+        {
+            if (codec->type == type)
+            {
                 encoder = codec->encoder;
-                if (encoder != NULL) {
-                    if (encoder(pixels, output, config) == SUCCESS) {
+                if (encoder != NULL)
+                {
+                    if (encoder(pixels, output, config) == SUCCESS)
+                    {
                         length = output->position;
 
                         // MaybeLocal<Object> maybeBuffer = node::Buffer::New(args.GetIsolate(), (size_t) length);
                         // maybeBuffer.ToLocal(&buffer);
                         // memcpy(node::Buffer::Data(buffer), output->data, length);
-                        // 
+                        //
                         // args.GetReturnValue().Set(buffer);
                         napi_value result_buffer;
                         status = napi_create_buffer_copy(env, length, output->data, nullptr, &result_buffer);
@@ -752,13 +806,17 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
 
                         free(output->data);
                         return result_buffer;
-                    } else {
+                    }
+                    else
+                    {
                         if (output->data != NULL)
                             free(output->data);
                         THROW_ERROR("Encode fail.");
                         return nullptr;
                     }
-                } else {
+                }
+                else
+                {
                     THROW_ERROR("Can't encode to this format.");
                 }
             }
@@ -766,16 +824,19 @@ napi_value Image::ToBuffer(napi_env env, napi_callback_info info) { //{{{
         }
         isError() ? (THROW_GET_ERROR()) : (THROW_ERROR("Unsupported type."));
         return nullptr;
-    }else{
+    }
+    else
+    {
         THROW_ERROR("Image uninitialized.");
         return nullptr;
     }
 
 } // }}}
 
-void Image::regCodec(ImageDecoder decoder, ImageEncoder encoder, ImageType type){ // {{{
+void Image::regCodec(ImageDecoder decoder, ImageEncoder encoder, ImageType type)
+{ // {{{
     ImageCodec *codec;
-    codec = (ImageCodec *) malloc(sizeof(ImageCodec));
+    codec = (ImageCodec *)malloc(sizeof(ImageCodec));
     codec->next = codecs;
     codec->decoder = decoder;
     codec->encoder = encoder;
@@ -783,38 +844,44 @@ void Image::regCodec(ImageDecoder decoder, ImageEncoder encoder, ImageType type)
     codecs = codec;
 } // }}}
 
-
-void Pixel::Merge(Pixel *pixel){ // {{{
+void Pixel::Merge(Pixel *pixel)
+{ // {{{
     double a, af, ab;
-    ab = (double) A / 0xFF;
-    af = (double) pixel->A / 0xFF;
-    a  = (1 - (1 - af) * (1 - ab));
+    ab = (double)A / 0xFF;
+    af = (double)pixel->A / 0xFF;
+    a = (1 - (1 - af) * (1 - ab));
 
-    R = (uint8_t) ((pixel->R * af + R * ab * (1 - af)) / a);
-    G = (uint8_t) ((pixel->G * af + G * ab * (1 - af)) / a);
-    B = (uint8_t) ((pixel->B * af + B * ab * (1 - af)) / a);
-    A = (uint8_t) (a * 0xFF);
+    R = (uint8_t)((pixel->R * af + R * ab * (1 - af)) / a);
+    G = (uint8_t)((pixel->G * af + G * ab * (1 - af)) / a);
+    B = (uint8_t)((pixel->B * af + B * ab * (1 - af)) / a);
+    A = (uint8_t)(a * 0xFF);
 } // }}}
 
-ImageState PixelArray::Malloc(size_t w, size_t h){ // {{{
+ImageState PixelArray::Malloc(size_t w, size_t h)
+{ // {{{
     int32_t size;
     Pixel *line;
 
-    if(w > 0 && h > 0){
-        if(w > Image::maxWidth || h > Image::maxHeight){
+    if (w > 0 && h > 0)
+    {
+        if (w > Image::maxWidth || h > Image::maxHeight)
+        {
             SET_ERROR("Beyond the pixel size limit.");
             goto fail;
         }
 
-        if((data = (Pixel**) malloc(h * sizeof(Pixel**))) == NULL){
+        if ((data = (Pixel **)malloc(h * sizeof(Pixel **))) == NULL)
+        {
             SET_ERROR("Out of memory.");
             goto fail;
         }
 
         width = w;
         size = width * sizeof(Pixel);
-        for(height = 0; height < h; height++){
-            if((line = (Pixel*) malloc(size)) == NULL){
+        for (height = 0; height < h; height++)
+        {
+            if ((line = (Pixel *)malloc(size)) == NULL)
+            {
                 SET_ERROR("Out of memory.");
                 goto free;
             }
@@ -828,7 +895,7 @@ ImageState PixelArray::Malloc(size_t w, size_t h){ // {{{
     return SUCCESS;
 
 free:
-    while(height--)
+    while (height--)
         free(data[height]);
     free(data);
 
@@ -839,13 +906,17 @@ fail:
     return FAIL;
 } // }}}
 
-void PixelArray::Free(){ // {{{
+void PixelArray::Free()
+{ // {{{
     size_t h, size;
 
-    if(data != NULL){
+    if (data != NULL)
+    {
         h = height;
-        while(h--){
-            if(data[h] != NULL) free(data[h]);
+        while (h--)
+        {
+            if (data[h] != NULL)
+                free(data[h]);
         }
         free(data);
         size = Size();
@@ -854,26 +925,33 @@ void PixelArray::Free(){ // {{{
     }
 
     width = height = 0;
-    type = EMPTY;;
+    type = EMPTY;
+    ;
     data = NULL;
 } // }}}
 
-ImageState PixelArray::CopyFrom(PixelArray *src, size_t x, size_t y, size_t w, size_t h){ // {{{
+ImageState PixelArray::CopyFrom(PixelArray *src, size_t x, size_t y, size_t w, size_t h)
+{ // {{{
     size_t sw, sh, size;
 
     sw = src->width;
     sh = src->height;
 
-    if(src->data && x < sw && y < sh){
-        if(x + w > sw) w = sw - x;
-        if(y + h > sh) h = sh - y;
+    if (src->data && x < sw && y < sh)
+    {
+        if (x + w > sw)
+            w = sw - x;
+        if (y + h > sh)
+            h = sh - y;
 
         Free();
         size = w * sizeof(Pixel);
-        if(Malloc(w, h) != SUCCESS) return FAIL;
+        if (Malloc(w, h) != SUCCESS)
+            return FAIL;
 
-        while(h--){
-            memcpy(data[h], &(src->data[y+h][x]), size);
+        while (h--)
+        {
+            memcpy(data[h], &(src->data[y + h][x]), size);
         }
         type = src->type;
     }
@@ -881,8 +959,9 @@ ImageState PixelArray::CopyFrom(PixelArray *src, size_t x, size_t y, size_t w, s
     return SUCCESS;
 } // }}}
 
-void PixelArray::Draw(PixelArray *src, size_t x, size_t y){ // {{{
-    //TODO
+void PixelArray::Draw(PixelArray *src, size_t x, size_t y)
+{ // {{{
+    // TODO
     size_t sw, sh, dw, dh, w, h, sx, sy, size;
     PixelArrayType st;
     Pixel *sp, *dp;
@@ -902,27 +981,39 @@ void PixelArray::Draw(PixelArray *src, size_t x, size_t y){ // {{{
        );
     //*/
 
-    if(x < dw && y < dh){
+    if (x < dw && y < dh)
+    {
         w = (x + sw < dw) ? sw : (dw - x);
         h = (y + sh < dh) ? sh : (dh - y);
         size = w * sizeof(Pixel);
 
-        if(type == EMPTY || st == SOLID){ // src opaque or dest empty
-            for(sy = 0; sy < h; sy++){
+        if (type == EMPTY || st == SOLID)
+        { // src opaque or dest empty
+            for (sy = 0; sy < h; sy++)
+            {
                 sp = src->data[sy];
                 dp = &(data[y + sy][x]);
                 memcpy(dp, sp, size);
             }
-        }else{
-            for(sy = 0; sy < h; sy++){
-                for(sx = 0; sx < w; sx++){
+        }
+        else
+        {
+            for (sy = 0; sy < h; sy++)
+            {
+                for (sx = 0; sx < w; sx++)
+                {
                     sp = &(src->data[sy][sx]);
                     dp = &(data[y + sy][x + sx]);
-                    if(sp->A == 0x00){ // src pixel transparent
-                        //DO Nothing
-                    }else if(sp->A == 0xFF || dp->A == 0x00){ // src pixel opaque or dest pixel transparent
+                    if (sp->A == 0x00)
+                    { // src pixel transparent
+                      // DO Nothing
+                    }
+                    else if (sp->A == 0xFF || dp->A == 0x00)
+                    { // src pixel opaque or dest pixel transparent
                         *dp = *sp;
-                    }else{
+                    }
+                    else
+                    {
                         dp->Merge(sp);
                     }
                 }
@@ -932,75 +1023,91 @@ void PixelArray::Draw(PixelArray *src, size_t x, size_t y){ // {{{
     }
 } // }}}
 
-void PixelArray::Fill(Pixel *color){ // {{{
+void PixelArray::Fill(Pixel *color)
+{ // {{{
     size_t i, size;
     uint8_t a;
     bool same;
     Pixel *row, *p;
 
-    if(data != NULL){
+    if (data != NULL)
+    {
         a = color->A;
-        if(a == 0x00 && type == EMPTY) return;
+        if (a == 0x00 && type == EMPTY)
+            return;
 
         same = (color->R == a && color->G == a && color->B == a);
         row = data[0];
-        if(same){
+        if (same)
+        {
             size = width * sizeof(Pixel);
             memset(row, a, size);
-        }else{
-            for(i = 0, p = row; i < width; i++, p++){
+        }
+        else
+        {
+            for (i = 0, p = row; i < width; i++, p++)
+            {
                 *p = *color;
             }
         }
 
         size = width * sizeof(Pixel);
-        for(i = 1; i < height; i++){
+        for (i = 1; i < height; i++)
+        {
             memcpy(data[i], row, size);
         }
 
-        type = ((a == 0xFF) ? SOLID :((a == 0x00) ? EMPTY : ALPHA));
+        type = ((a == 0xFF) ? SOLID : ((a == 0x00) ? EMPTY : ALPHA));
     }
 } // }}}
 
-ImageState PixelArray::SetWidth(size_t w){ // {{{
+ImageState PixelArray::SetWidth(size_t w)
+{ // {{{
     size_t size, *index, *p, x, y;
     double scale;
     Pixel *src, *dst;
     PixelArray newArray, *pixels;
 
-
-    if(data != NULL){
-        if(w > Image::maxWidth){
+    if (data != NULL)
+    {
+        if (w > Image::maxWidth)
+        {
             SET_ERROR("Beyond the width limit.");
             return FAIL;
         }
 
-        if(w == width){
+        if (w == width)
+        {
             return SUCCESS;
         }
 
         size = w * sizeof(size_t);
-        if((index = (size_t *) malloc(size)) == NULL){
+        if ((index = (size_t *)malloc(size)) == NULL)
+        {
             SET_ERROR("Out of memory.");
             return FAIL;
         }
 
-        scale = ((double) width) / w;
-        for(x = 0, p = index; x < w; x++, p++){
-            *p = (size_t) (scale * x);
+        scale = ((double)width) / w;
+        for (x = 0, p = index; x < w; x++, p++)
+        {
+            *p = (size_t)(scale * x);
         }
 
         pixels = &newArray;
-        if(pixels->Malloc(w, height) != SUCCESS){
+        if (pixels->Malloc(w, height) != SUCCESS)
+        {
             free(index);
             return FAIL;
         }
         pixels->type = type;
 
-        for(y = 0; y < height; y++){
+        for (y = 0; y < height; y++)
+        {
             src = data[y];
             dst = pixels->data[y];
-            for(x = 0, p = index; x < w; x++, p++){
+            for (x = 0, p = index; x < w; x++, p++)
+            {
                 dst[x] = src[*p];
             }
         }
@@ -1011,33 +1118,39 @@ ImageState PixelArray::SetWidth(size_t w){ // {{{
     return SUCCESS;
 } // }}}
 
-ImageState PixelArray::SetHeight(size_t h){ // {{{
+ImageState PixelArray::SetHeight(size_t h)
+{ // {{{
     PixelArray newArray, *pixels;
     size_t size, y;
     double scale;
     Pixel *src, *dst;
 
-    if(data != NULL){
+    if (data != NULL)
+    {
 
-        if(h > Image::maxHeight){
+        if (h > Image::maxHeight)
+        {
             SET_ERROR("Beyond the height limit.");
             return FAIL;
         }
 
-        if(h == height){
+        if (h == height)
+        {
             return SUCCESS;
         }
 
         pixels = &newArray;
-        if(pixels->Malloc(width, h) != SUCCESS){
+        if (pixels->Malloc(width, h) != SUCCESS)
+        {
             return FAIL;
         }
         pixels->type = type;
 
         size = width * sizeof(Pixel);
-        scale = ((double) height) / h;
-        for(y = 0; y < h; y++){
-            src = data[(size_t) (scale * y)];
+        scale = ((double)height) / h;
+        for (y = 0; y < h; y++)
+        {
+            src = data[(size_t)(scale * y)];
             dst = pixels->data[y];
             memcpy(dst, src, size);
         }
@@ -1048,39 +1161,64 @@ ImageState PixelArray::SetHeight(size_t h){ // {{{
     return SUCCESS;
 } // }}}
 
-ImageState PixelArray::Resize(size_t w, size_t h, const char *filter){
+ImageState PixelArray::toBGRA()
+{
+    int src_width = width, src_height = height;
+
+    for (int src_y = 0; src_y < src_height; src_y++)
+    {
+        for (int x = 0; x < src_width; x++)
+        {
+            uint8_t tmp = data[src_y][x].R;
+            data[src_y][x].R = data[src_y][x].B;
+            data[src_y][x].B = tmp;
+        }
+    }
+
+    return SUCCESS;
+}
+
+ImageState PixelArray::Resize(size_t w, size_t h, const char *filter)
+{
     PixelArray newArray, *pixels;
 
-    if ( (int)w < 1 ) {
+    if ((int)w < 1)
+    {
         w = width * h / height;
     }
 
-    if ( (int)h < 1 ) {
+    if ((int)h < 1)
+    {
         h = height * w / width;
     }
 
-    if(data != NULL){
-        if(w > Image::maxWidth){
+    if (data != NULL)
+    {
+        if (w > Image::maxWidth)
+        {
             SET_ERROR("Beyond the width limit.");
             return FAIL;
         }
 
-        if(h > Image::maxHeight){
+        if (h > Image::maxHeight)
+        {
             SET_ERROR("Beyond the height limit.");
             return FAIL;
         }
 
-        if(w == width && h == height){
+        if (w == width && h == height)
+        {
             return SUCCESS;
         }
 
         pixels = &newArray;
-        if(pixels->Malloc(w, h) != SUCCESS){
+        if (pixels->Malloc(w, h) != SUCCESS)
+        {
             return FAIL;
         }
         pixels->type = type;
 
-        resize( this, pixels, filter );
+        resize(this, pixels, filter);
 
         Free();
         *this = *pixels;
@@ -1090,21 +1228,25 @@ ImageState PixelArray::Resize(size_t w, size_t h, const char *filter){
     return SUCCESS;
 }
 
-ImageState PixelArray::Rotate(size_t deg){
+ImageState PixelArray::Rotate(size_t deg)
+{
     PixelArray newArray, *pixels;
-    size_t w,h;
-    
+    size_t w, h;
+
     deg = deg % 360;
 
-    if(data != NULL){
-        if(deg==0){
+    if (data != NULL)
+    {
+        if (deg == 0)
+        {
             return SUCCESS;
         }
 
         pixels = &newArray;
         pixels->type = type;
-        
-        if(rotate( this, pixels, (const size_t) deg) != SUCCESS){
+
+        if (rotate(this, pixels, (const size_t)deg) != SUCCESS)
+        {
             return FAIL;
         }
 
@@ -1114,7 +1256,8 @@ ImageState PixelArray::Rotate(size_t deg){
     return SUCCESS;
 }
 
-void PixelArray::DetectTransparent(){ // {{{
+void PixelArray::DetectTransparent()
+{ // {{{
     size_t x, y;
     Pixel *pixel;
     bool empty, opaque, alpha;
@@ -1122,22 +1265,26 @@ void PixelArray::DetectTransparent(){ // {{{
 
     empty = opaque = alpha = false;
 
-    for(y = 0; y < height; y++){
+    for (y = 0; y < height; y++)
+    {
         pixel = data[y];
-        for(x = 0; x < width; x++, pixel++){
-            switch(pixel->A){
-                case 0x00:
-                    empty = true;
-                    break;
-                case 0xFF:
-                    opaque = true;
-                    break;
-                default:
-                    alpha = true;
-                    break;
+        for (x = 0; x < width; x++, pixel++)
+        {
+            switch (pixel->A)
+            {
+            case 0x00:
+                empty = true;
+                break;
+            case 0xFF:
+                opaque = true;
+                break;
+            default:
+                alpha = true;
+                break;
             }
 
-            if(alpha || (empty && opaque)){
+            if (alpha || (empty && opaque))
+            {
                 type = ALPHA;
                 return;
             }
@@ -1146,12 +1293,13 @@ void PixelArray::DetectTransparent(){ // {{{
     type = opaque ? SOLID : EMPTY;
 } // }}}
 
-extern "C" { // {{{
-    napi_value Init(napi_env env, napi_value exports) {
-      return Image::Init(env, exports);
+extern "C"
+{ // {{{
+    napi_value Init(napi_env env, napi_value exports)
+    {
+        return Image::Init(env, exports);
     }
 } // }}}
-
 
 NAPI_MODULE(NODE_GYP_MODULE_NAME, Init);
 
