@@ -128,13 +128,27 @@ napi_value Image::Init(napi_env env, napi_value exports) { // {{{
     regAllCodecs();
 
     napi_status status;
+
+	// global properties
+    napi_property_descriptor globalProperties[] = {
+        DECLARE_NAPI_ACCESSOR("maxWidth", GetMaxWidth, SetMaxWidth),
+        DECLARE_NAPI_ACCESSOR("maxHeight", GetMaxHeight, SetMaxHeight),
+        DECLARE_NAPI_ACCESSOR("usedMemory", GetUsedMemory, nullptr),
+        DECLARE_NAPI_METHOD("gc", GC)
+	};
+	
+	napi_property_descriptor desc = { "SetMaxHeight", 0, SetMaxHeight, 0, 0, 0, napi_default, 0 };
+    status = napi_define_properties(env, exports, sizeof(globalProperties) / sizeof(globalProperties[0]), globalProperties);
+    assert(status == napi_ok); 
+
+	// Image properties
     napi_property_descriptor properties[] = {
         DECLARE_NAPI_ACCESSOR("width", GetWidth, SetWidth),
         DECLARE_NAPI_ACCESSOR("height", GetHeight, SetHeight),
         DECLARE_NAPI_ACCESSOR("transparent", GetTransparent, nullptr),
-        DECLARE_NAPI_ACCESSOR("maxWidth", GetMaxWidth, SetMaxWidth),
-        DECLARE_NAPI_ACCESSOR("maxHeight", GetMaxHeight, SetMaxHeight),
-        DECLARE_NAPI_ACCESSOR("usedMemory", GetUsedMemory, nullptr),
+        // DECLARE_NAPI_ACCESSOR("maxWidth", GetMaxWidth, SetMaxWidth),
+        // DECLARE_NAPI_ACCESSOR("maxHeight", GetMaxHeight, SetMaxHeight),
+        // DECLARE_NAPI_ACCESSOR("usedMemory", GetUsedMemory, nullptr),
         DECLARE_NAPI_METHOD("resize", Resize),
         DECLARE_NAPI_METHOD("rotate", Rotate),
         DECLARE_NAPI_METHOD("fillColor", FillColor),
@@ -142,11 +156,11 @@ napi_value Image::Init(napi_env env, napi_value exports) { // {{{
         DECLARE_NAPI_METHOD("copyFromImage", CopyFromImage),
         DECLARE_NAPI_METHOD("drawImage", DrawImage),
         DECLARE_NAPI_METHOD("toBuffer", ToBuffer),
-        DECLARE_NAPI_METHOD("gc", GC)
+        // DECLARE_NAPI_METHOD("gc", GC)
     };
 
     napi_value cons;
-    status = napi_define_class(env, "Image", NAPI_AUTO_LENGTH, New, nullptr, 14, properties, &cons);
+    status = napi_define_class(env, "Image", NAPI_AUTO_LENGTH, New, nullptr, sizeof(globalProperties) / sizeof(globalProperties[0]), properties, &cons);
     assert(status == napi_ok); 
 
     status = napi_create_reference(env, cons, 1, &constructor);
